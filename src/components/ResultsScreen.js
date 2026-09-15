@@ -3,7 +3,7 @@ import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
 
 export default function ResultsScreen({ month, history, creditHistory, openingBalance, isFirstInChain, savingsGoals, onUpdateOpeningBalance, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
-  const [tab, setTab]                         = useState('table');
+  const [tab, setTab]                         = useState('dashboard');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -45,11 +45,7 @@ export default function ResultsScreen({ month, history, creditHistory, openingBa
       if (ng) onUpdateGoal(goalId, { withdrawals: ng.withdrawals });
     });
 
-    const withdrawalKeys = new Set(nextGoals.flatMap(g => (g.withdrawals || []).map(w => `${w.store}|${w.date}`)));
-    onUpdateCreditHistory(creditHistory.map(item => ({
-      ...item,
-      isTransfer: withdrawalKeys.has(`${item.transaction.store}|${item.transaction.date}`),
-    })));
+    onUpdateCreditHistory(creditHistory);
   };
 
   const handleUpdateAmount = (type, idx, newAbs) => {
@@ -71,8 +67,8 @@ export default function ResultsScreen({ month, history, creditHistory, openingBa
         <span className="nav-title">{month.label}</span>
       </div>
       <div className="tabs">
-        <button className={`tab-btn${tab === 'table' ? ' tab-btn--active' : ''}`} onClick={() => setTab('table')}>Transakcie</button>
         <button className={`tab-btn${tab === 'dashboard' ? ' tab-btn--active' : ''}`} onClick={() => setTab('dashboard')}>Dashboard</button>
+        <button className={`tab-btn${tab === 'table' ? ' tab-btn--active' : ''}`} onClick={() => setTab('table')}>Transakcie</button>
       </div>
       {tab === 'table' && (
         <div className="results-action-bar">

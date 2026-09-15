@@ -8,7 +8,7 @@ export function calcMonthTotals(history, creditHistory) {
     else if (item.category in catTotals) { catTotals[item.category] += abs; }
   });
   const totalExpenses = catTotals.needs + catTotals.wants + catTotals.savings;
-  const totalIncome   = creditHistory.filter(i => !i.isTransfer).reduce((s, i) => s + i.transaction.amount, 0);
+  const totalIncome   = creditHistory.reduce((s, i) => s + i.transaction.amount, 0);
   return { totalIncome, totalExpenses, catTotals };
 }
 
