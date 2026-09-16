@@ -7,7 +7,8 @@ export async function loadUserData(userId) {
     .eq('user_id', userId)
     .single();
 
-  if (error || !data) return { monthsData: {}, savingsGoals: [] };
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!data) return { monthsData: {}, savingsGoals: [] };
   return {
     monthsData:   data.months_data   || {},
     savingsGoals: data.savings_goals || [],
@@ -15,8 +16,9 @@ export async function loadUserData(userId) {
 }
 
 export async function saveUserData(userId, monthsData, savingsGoals) {
-  await supabase.from('user_data').upsert(
+  const { error } = await supabase.from('user_data').upsert(
     { user_id: userId, months_data: monthsData, savings_goals: savingsGoals, updated_at: new Date().toISOString() },
     { onConflict: 'user_id' }
   );
+  if (error) throw error;
 }

@@ -15,8 +15,11 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [monthsData, setMonthsData]       = useState({});
   const [savingsGoals, setSavingsGoals]   = useState([]);
+  const [dataLoadError, setDataLoadError] = useState(null);
+  const [dataSaveError, setDataSaveError] = useState(null);
   const months = useMemo(() => generateMonths(), []);
   const isInitialLoad = useRef(true);
+  const dataLoadedForUser = useRef(false);
 
   // Auth listener
   useEffect(() => {
@@ -31,21 +34,46 @@ function App() {
 
   // Load data after login
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      dataLoadedForUser.current = false;
+      return;
+    }
     isInitialLoad.current = true;
-    loadUserData(user.id).then(({ monthsData: md, savingsGoals: sg }) => {
-      setMonthsData(md);
-      setSavingsGoals(sg);
-      isInitialLoad.current = false;
-    });
+    dataLoadedForUser.current = false;
+    setDataLoadError(null);
+    setDataSaveError(null);
+    let cancelled = false;
+
+    loadUserData(user.id)
+      .then(({ monthsData: md, savingsGoals: sg }) => {
+        if (cancelled) return;
+        setMonthsData(md);
+        setSavingsGoals(sg);
+        dataLoadedForUser.current = true;
+        isInitialLoad.current = false;
+      })
+      .catch(error => {
+        if (cancelled) return;
+        console.error('Nepodarilo sa načítať dáta:', error);
+        setDataLoadError(error);
+      });
+
+    return () => { cancelled = true; };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Autosave to Supabase (debounced 1 s)
   useEffect(() => {
-    if (!user || isInitialLoad.current) return;
-    const timer = setTimeout(() => saveUserData(user.id, monthsData, savingsGoals), 1000);
+    if (!user || isInitialLoad.current || !dataLoadedForUser.current || dataLoadError || dataSaveError) return;
+    const timer = setTimeout(async () => {
+      try {
+        await saveUserData(user.id, monthsData, savingsGoals);
+      } catch (error) {
+        console.error('Nepodarilo sa uložiť dáta:', error);
+        setDataSaveError(error);
+      }
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [monthsData, savingsGoals, user]);
+  }, [monthsData, savingsGoals, user, dataLoadError, dataSaveError]);
 
   const handleReset = () => {
     setMonthsData(prev => { const { [selectedMonth.key]: _, ...rest } = prev; return rest; });
@@ -89,6 +117,10 @@ function App() {
 
   if (!user) {
     return <AuthScreen />;
+  }
+
+  if (dataLoadError || dataSaveError) {
+    return <div className="auth-screen"><div className="auth-loading">Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.</div></div>;
   }
 
   if (screen === 'yearly') {
