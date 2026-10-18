@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { computeOpeningBalance, calcMonthTotals } from '../utils/finance';
+import { calcMonthTotals } from '../utils/finance';
 import MonthlyBarChart from './MonthlyBarChart';
-import BalanceLineChart from './BalanceLineChart';
 import SporeniTab from './SporeniTab';
 
 export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout }) {
@@ -9,16 +8,14 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
   const year = new Date().getFullYear();
   const stats = months.map(({ key, label }) => {
     const data = monthsData[key];
-    if (!data) return { key, label, income: 0, needs: 0, wants: 0, savings: 0, expenses: 0, closing: null, hasData: false };
-    const opening = computeOpeningBalance(key, months, monthsData);
+    if (!data) return { key, label, income: 0, needs: 0, wants: 0, savings: 0, expenses: 0, hasData: false };
     const { totalIncome, totalExpenses, catTotals } = calcMonthTotals(data.history, data.creditHistory);
-    return { key, label, income: totalIncome, needs: catTotals.needs, wants: catTotals.wants, savings: catTotals.savings, expenses: totalExpenses, closing: opening + totalIncome - totalExpenses, hasData: true };
+    return { key, label, income: totalIncome, needs: catTotals.needs, wants: catTotals.wants, savings: catTotals.savings, expenses: totalExpenses, hasData: true };
   });
 
   const totalIncome   = stats.reduce((s, m) => s + m.income, 0);
   const totalExpenses = stats.reduce((s, m) => s + m.expenses, 0);
   const netCF         = totalIncome - totalExpenses;
-  const lastClosing   = [...stats].reverse().find(m => m.hasData)?.closing ?? 0;
   const totalNeeds    = stats.reduce((s, m) => s + m.needs, 0);
   const totalWants    = stats.reduce((s, m) => s + m.wants, 0);
   const totalSavingsCat = stats.reduce((s, m) => s + m.savings, 0);
@@ -60,7 +57,6 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
             { label: 'Celkové príjmy',  value: `+${totalIncome.toFixed(2)} €`,                              color: '#22c55e' },
             { label: 'Celkové výdavky', value: `-${totalExpenses.toFixed(2)} €`,                            color: '#ef4444' },
             { label: 'Čistý CF (YTD)',  value: `${netCF >= 0 ? '+' : ''}${netCF.toFixed(2)} €`,             color: netCF >= 0 ? '#22c55e' : '#ef4444' },
-            { label: 'Zostatok',        value: `${lastClosing >= 0 ? '+' : ''}${lastClosing.toFixed(2)} €`, color: lastClosing >= 0 ? '#22c55e' : '#ef4444' },
           ].map(k => (
             <div key={k.label} className="kpi-card">
               <span className="kpi-label">{k.label}</span>
@@ -84,14 +80,13 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
         </div>
 
         <MonthlyBarChart stats={stats} />
-        <BalanceLineChart stats={stats} />
 
         <div className="chart-box">
           <span className="chart-title">Mesačný prehľad</span>
           <div className="mtable-scroll">
             <table className="mtable">
               <thead>
-                <tr><th>Mesiac</th><th>Príjmy</th><th>Needs</th><th>Wants</th><th>Savings</th><th>Zostatok</th></tr>
+                <tr><th>Mesiac</th><th>Príjmy</th><th>Needs</th><th>Wants</th><th>Savings</th></tr>
               </thead>
               <tbody>
                 {stats.map((m, i) => (
@@ -101,7 +96,6 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
                     <td>{m.hasData ? m.needs.toFixed(2) : '—'}</td>
                     <td>{m.hasData ? m.wants.toFixed(2) : '—'}</td>
                     <td>{m.hasData ? m.savings.toFixed(2) : '—'}</td>
-                    <td className={m.hasData ? (m.closing >= 0 ? 'mtd-pos' : 'mtd-neg') : ''}>{m.hasData ? m.closing.toFixed(2) : '—'}</td>
                   </tr>
                 ))}
               </tbody>

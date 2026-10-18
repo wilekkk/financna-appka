@@ -17,28 +17,6 @@ export function getPrevMonthKey(key) {
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
 }
 
-export function computeOpeningBalance(monthKey, months, monthsData) {
-  const keys = months.map(m => m.key);
-  const targetIdx = keys.indexOf(monthKey);
-  let running = null;
-  for (let i = 0; i < targetIdx; i++) {
-    const data = monthsData[keys[i]];
-    if (!data) continue;
-    if (running === null) running = data.openingBalance ?? 0;
-    const { totalIncome, totalExpenses } = calcMonthTotals(data.history, data.creditHistory);
-    running += totalIncome - totalExpenses;
-  }
-  if (running !== null) return running;
-  return monthsData[monthKey]?.openingBalance ?? 0;
-}
-
-export function isFirstInChain(monthKey, months, monthsData) {
-  const keys = months.map(m => m.key);
-  const idx  = keys.indexOf(monthKey);
-  for (let i = 0; i < idx; i++) { if (monthsData[keys[i]]) return false; }
-  return true;
-}
-
 export function generateMonths() {
   const year = new Date().getFullYear();
   return MONTH_NAMES.map((name, m) => ({

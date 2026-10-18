@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import './App.css';
 import { supabase } from './supabaseClient';
-import { generateMonths, computeOpeningBalance, isFirstInChain } from './utils/finance';
+import { generateMonths } from './utils/finance';
 import { loadUserData, saveUserData } from './utils/db';
 import AuthScreen from './components/AuthScreen';
 import YearlyScreen from './components/YearlyScreen';
@@ -94,13 +94,9 @@ function App() {
   const handleComplete = (history, creditHistory) => {
     setMonthsData(prev => ({
       ...prev,
-      [selectedMonth.key]: { history, creditHistory, openingBalance: prev[selectedMonth.key]?.openingBalance ?? 0 },
+      [selectedMonth.key]: { history, creditHistory },
     }));
     setScreen('results');
-  };
-
-  const handleUpdateOpeningBalance = value => {
-    setMonthsData(prev => ({ ...prev, [selectedMonth.key]: { ...prev[selectedMonth.key], openingBalance: value } }));
   };
 
   const handleUpdateHistory = newHistory => {
@@ -146,17 +142,12 @@ function App() {
   }
 
   const data = monthsData[selectedMonth.key];
-  const computedOpening = computeOpeningBalance(selectedMonth.key, months, monthsData);
-  const isFirst = isFirstInChain(selectedMonth.key, months, monthsData);
   return (
     <ResultsScreen
       month={selectedMonth}
       history={data.history}
       creditHistory={data.creditHistory}
-      openingBalance={computedOpening}
-      isFirstInChain={isFirst}
       savingsGoals={savingsGoals}
-      onUpdateOpeningBalance={handleUpdateOpeningBalance}
       onUpdateHistory={handleUpdateHistory}
       onUpdateCreditHistory={handleUpdateCreditHistory}
       onUpdateGoal={handleUpdateGoal}

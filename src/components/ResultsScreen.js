@@ -2,7 +2,7 @@ import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
 
-export default function ResultsScreen({ month, history, creditHistory, openingBalance, isFirstInChain, savingsGoals, onUpdateOpeningBalance, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
+export default function ResultsScreen({ month, history, creditHistory, savingsGoals, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
   const [tab, setTab]                         = useState('dashboard');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -126,9 +126,6 @@ export default function ResultsScreen({ month, history, creditHistory, openingBa
         : <DashboardTab
             history={history}
             creditHistory={creditHistory}
-            openingBalance={openingBalance}
-            isFirstInChain={isFirstInChain}
-            onUpdateOpeningBalance={onUpdateOpeningBalance}
           />
       }
     </div>

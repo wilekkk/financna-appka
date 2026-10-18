@@ -9,8 +9,14 @@ export async function loadUserData(userId) {
 
   if (error && error.code !== 'PGRST116') throw error;
   if (!data) return { monthsData: {}, savingsGoals: [] };
+  const monthsData = Object.fromEntries(
+    Object.entries(data.months_data || {}).map(([key, month]) => {
+      const { openingBalance, ...monthWithoutBalance } = month;
+      return [key, monthWithoutBalance];
+    })
+  );
   return {
-    monthsData:   data.months_data   || {},
+    monthsData,
     savingsGoals: data.savings_goals || [],
   };
 }
