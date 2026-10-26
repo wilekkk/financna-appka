@@ -2,12 +2,15 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import './App.css';
 import { supabase } from './supabaseClient';
 import { generateMonths } from './utils/finance';
+import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData } from './utils/db';
 import AuthScreen from './components/AuthScreen';
 import YearlyScreen from './components/YearlyScreen';
 import HomeScreen from './components/HomeScreen';
 import MonthSwipeScreen from './components/MonthSwipeScreen';
 import ResultsScreen from './components/ResultsScreen';
+import SettingsScreen from './components/SettingsScreen';
+import CategoriesScreen from './components/CategoriesScreen';
 
 function App() {
   const [user, setUser]                    = useState(undefined); // undefined = loading
@@ -15,6 +18,7 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [monthsData, setMonthsData]       = useState({});
   const [savingsGoals, setSavingsGoals]   = useState([]);
+  const [customCategories, setCustomCategories] = useState(DEFAULT_SUBCATEGORIES);
   const [dataLoadError, setDataLoadError] = useState(null);
   const [dataSaveError, setDataSaveError] = useState(null);
   const months = useMemo(() => generateMonths(), []);
@@ -85,6 +89,8 @@ function App() {
   const handleAddGoal    = data => setSavingsGoals(prev => [...prev, { ...data, id: Date.now() }]);
   const handleUpdateGoal = (id, data) => setSavingsGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
   const handleDeleteGoal = id => setSavingsGoals(prev => prev.filter(g => g.id !== id));
+  const handleAddCategory = category => setCustomCategories(prev => [...prev, category]);
+  const handleDeleteCategory = id => setCustomCategories(prev => prev.filter(category => category.id !== id));
 
   const handleSelect = month => {
     setSelectedMonth(month);
@@ -120,7 +126,15 @@ function App() {
   }
 
   if (screen === 'yearly') {
-    return <YearlyScreen months={months} monthsData={monthsData} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />;
+    return <YearlyScreen months={months} monthsData={monthsData} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenSettings={() => setScreen('settings')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />;
+  }
+
+  if (screen === 'settings') {
+    return <SettingsScreen onBack={() => setScreen('yearly')} onOpenCategories={() => setScreen('categories')} />;
+  }
+
+  if (screen === 'categories') {
+    return <CategoriesScreen customCategories={customCategories} onAddCategory={handleAddCategory} onDeleteCategory={handleDeleteCategory} onBack={() => setScreen('settings')} />;
   }
 
   if (screen === 'months') {
@@ -148,6 +162,7 @@ function App() {
       history={data.history}
       creditHistory={data.creditHistory}
       savingsGoals={savingsGoals}
+      customCategories={customCategories}
       onUpdateHistory={handleUpdateHistory}
       onUpdateCreditHistory={handleUpdateCreditHistory}
       onUpdateGoal={handleUpdateGoal}

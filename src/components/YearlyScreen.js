@@ -3,7 +3,7 @@ import { calcMonthTotals } from '../utils/finance';
 import MonthlyBarChart from './MonthlyBarChart';
 import SporeniTab from './SporeniTab';
 
-export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout }) {
+export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenSettings, onSelectMonth, user, onLogout }) {
   const [activeTab, setActiveTab] = useState('prehled');
   const year = new Date().getFullYear();
   const stats = months.map(({ key, label }) => {
@@ -32,6 +32,7 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
         <h1 className="app-title" style={{ margin: 0 }}>Prehľad {year}</h1>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button className="months-btn" onClick={onOpenMonths}>Mesiace →</button>
+          <button className="settings-btn" onClick={onOpenSettings} aria-label="Nastavenia" title="Nastavenia">⚙</button>
           <button className="logout-btn" onClick={onLogout} title={user?.email}>⎋</button>
         </div>
       </div>

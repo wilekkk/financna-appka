@@ -2,7 +2,7 @@ import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
 
-export default function ResultsScreen({ month, history, creditHistory, savingsGoals, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
+export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
   const [tab, setTab]                         = useState('dashboard');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -57,6 +57,14 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
       onUpdateCreditHistory(creditHistory.map((item, i) =>
         i !== idx ? item : { ...item, transaction: { ...item.transaction, amount: newAbs } }
       ));
+    }
+  };
+
+  const handleAssignSubcategory = (type, idx, subcategory) => {
+    if (type === 'debit') {
+      onUpdateHistory(history.map((item, i) => i !== idx ? item : { ...item, subcategory }));
+    } else {
+      onUpdateCreditHistory(creditHistory.map((item, i) => i !== idx ? item : { ...item, subcategory }));
     }
   };
 
@@ -116,12 +124,14 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             creditHistory={creditHistory}
             editMode={editMode}
             savingsGoals={savingsGoals}
+            customCategories={customCategories}
             onUpdateAmounts={handleUpdateAmounts}
             onUpdateAmount={handleUpdateAmount}
             onDelete={handleDelete}
             onAllocateToGoal={handleAllocateToGoal}
             onAddGoal={onAddGoal}
             onWithdrawalsChanged={handleWithdrawalsChanged}
+            onAssignSubcategory={handleAssignSubcategory}
           />
         : <DashboardTab
             history={history}

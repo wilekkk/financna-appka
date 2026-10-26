@@ -45,12 +45,13 @@ function EditableBubble({ value, color, emoji, onChange }) {
   );
 }
 
-export default function TransactionRow({ item, editMode, savingsGoals, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged }) {
+export default function TransactionRow({ item, editMode, savingsGoals, customCategories, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory }) {
   const [confirmDelete, setConfirmDelete]         = useState(false);
   const [editingAmount, setEditingAmount]         = useState(false);
   const [amountInput, setAmountInput]             = useState('');
   const [showGoalModal, setShowGoalModal]         = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showSubcategoryMenu, setShowSubcategoryMenu] = useState(false);
   const isCredit   = item._type === 'credit';
   const abs        = Math.abs(item.transaction.amount);
   const bubbleCats = CATS.filter(c => c.key !== 'prijem');
@@ -82,6 +83,8 @@ export default function TransactionRow({ item, editMode, savingsGoals, onUpdateA
     return net > 0.005;
   });
   const showWithdrawBtn = isCredit && (txWithdrawals.length > 0 || goalsHaveBalance);
+  const subcategories = customCategories.filter(category => category.type === (isCredit ? 'income' : 'expense'));
+  const assignedSubcategory = item.subcategory;
 
   return (
     <div className={`tx-row${editMode && !isValid ? ' tx-row--invalid' : ''}`}>
@@ -163,6 +166,51 @@ export default function TransactionRow({ item, editMode, savingsGoals, onUpdateA
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {!confirmDelete && (
+        <div className="tx-subcategory-row">
+          {assignedSubcategory && (
+            <span className="tx-subcategory-tag">↳ {assignedSubcategory.name}</span>
+          )}
+          <div className="tx-subcategory-menu">
+            <button
+              className={`tx-subcategory-btn${assignedSubcategory ? ' tx-subcategory-btn--assigned' : ''}`}
+              onClick={() => setShowSubcategoryMenu(open => !open)}
+              disabled={subcategories.length === 0}
+              title={subcategories.length === 0 ? 'Najprv pridaj podkategóriu v Nastaveniach' : 'Priradiť podkategóriu'}
+            >
+              {assignedSubcategory ? 'Zmeniť podkategóriu' : '+ Podkategória'}
+            </button>
+            {showSubcategoryMenu && subcategories.length > 0 && (
+              <div className="tx-subcategory-dropdown">
+                {subcategories.map(category => (
+                  <button
+                    key={category.id}
+                    className="tx-subcategory-option"
+                    onClick={() => {
+                      onAssignSubcategory(item._type, item._idx, category);
+                      setShowSubcategoryMenu(false);
+                    }}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+                {assignedSubcategory && (
+                  <button
+                    className="tx-subcategory-option tx-subcategory-option--remove"
+                    onClick={() => {
+                      onAssignSubcategory(item._type, item._idx, null);
+                      setShowSubcategoryMenu(false);
+                    }}
+                  >
+                    Zrušiť priradenie
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
