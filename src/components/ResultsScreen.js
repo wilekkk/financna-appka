@@ -2,8 +2,8 @@ import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
 
-export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
-  const [tab, setTab]                         = useState('dashboard');
+export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
+  const [tab, setTab]                         = useState(selectedSubcategory ? 'table' : 'dashboard');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -119,12 +119,20 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
         </div>
       )}
       {tab === 'table'
-        ? <TransactionTable
+        ? <>
+          {selectedSubcategory && (
+            <div className="subcategory-filter-banner">
+              Zobrazené transakcie: <strong>{selectedSubcategory.name}</strong>
+              <button type="button" onClick={onClearSubcategory}>Zrušiť filter</button>
+            </div>
+          )}
+          <TransactionTable
             history={history}
             creditHistory={creditHistory}
             editMode={editMode}
             savingsGoals={savingsGoals}
             customCategories={customCategories}
+            subcategoryFilter={selectedSubcategory}
             onUpdateAmounts={handleUpdateAmounts}
             onUpdateAmount={handleUpdateAmount}
             onDelete={handleDelete}
@@ -133,9 +141,15 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             onWithdrawalsChanged={handleWithdrawalsChanged}
             onAssignSubcategory={handleAssignSubcategory}
           />
+        </>
         : <DashboardTab
             history={history}
             creditHistory={creditHistory}
+            customCategories={customCategories}
+            onSelectSubcategory={subcategory => {
+              onSelectSubcategory(subcategory);
+              setTab('table');
+            }}
           />
       }
     </div>

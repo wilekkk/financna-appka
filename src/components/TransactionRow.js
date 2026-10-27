@@ -171,17 +171,14 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
 
       {!confirmDelete && (
         <div className="tx-subcategory-row">
-          {assignedSubcategory && (
-            <span className="tx-subcategory-tag">↳ {assignedSubcategory.name}</span>
-          )}
           <div className="tx-subcategory-menu">
             <button
-              className={`tx-subcategory-btn${assignedSubcategory ? ' tx-subcategory-btn--assigned' : ''}`}
+              className={assignedSubcategory ? 'tx-subcategory-tag tx-subcategory-select' : 'tx-subcategory-btn'}
               onClick={() => setShowSubcategoryMenu(open => !open)}
               disabled={subcategories.length === 0}
-              title={subcategories.length === 0 ? 'Najprv pridaj podkategóriu v Nastaveniach' : 'Priradiť podkategóriu'}
+              title={subcategories.length === 0 ? 'Najprv pridaj podkategóriu v Nastaveniach' : assignedSubcategory ? 'Zmeniť podkategóriu' : 'Priradiť podkategóriu'}
             >
-              {assignedSubcategory ? 'Zmeniť podkategóriu' : '+ Podkategória'}
+              {assignedSubcategory ? assignedSubcategory.name : '+ Podkategória'}
             </button>
             {showSubcategoryMenu && subcategories.length > 0 && (
               <div className="tx-subcategory-dropdown">

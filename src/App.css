@@ -121,6 +121,13 @@ body {
   font-weight: 700;
 }
 
+.tx-subcategory-select {
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .tx-subcategory-menu { position: relative; }
 
 .tx-subcategory-btn {
@@ -805,7 +812,7 @@ body {
 .month-card:active { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .month-card--done  { border-color: #e0f2fe; }
 
-.month-card-info { display: flex; flex-direction: column; gap: 3px; }
+.month-card-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
 
 .month-name {
   font-size: 16px;
@@ -820,6 +827,73 @@ body {
 }
 
 .month-sub--empty { color: #cbd5e1; }
+
+.subcategory-filter-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 13px;
+}
+
+.subcategory-filter-banner button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #7c3aed;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.subcategory-summary {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.subcategory-summary-title {
+  margin: 0 0 12px;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.subcategory-summary section + section {
+  margin-top: 14px;
+}
+
+.subcategory-summary-heading {
+  margin: 0 0 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.subcategory-summary-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 0;
+  border: 0;
+  border-bottom: 1px solid #f1f5f9;
+  background: transparent;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.subcategory-summary-row:hover { text-decoration: underline; }
+.subcategory-summary-row--income { color: #16a34a; }
+.subcategory-summary-row--expense { color: #dc2626; }
+.subcategory-summary-row--unassigned { color: #64748b; }
 
 .month-arrow {
   font-size: 18px;
@@ -1498,7 +1572,7 @@ body {
 
 .stats-grid {
   width: 100%;
-  max-width: 320px;
+  max-width: 430px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;

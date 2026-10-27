@@ -3,7 +3,7 @@ import { calcMonthTotals } from '../utils/finance';
 import MonthlyBarChart from './MonthlyBarChart';
 import SporeniTab from './SporeniTab';
 
-export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenSettings, onSelectMonth, user, onLogout }) {
+export default function YearlyScreen({ months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenSettings, onSelectMonth, user, onLogout }) {
   const [activeTab, setActiveTab] = useState('prehled');
   const year = new Date().getFullYear();
   const stats = months.map(({ key, label }) => {
@@ -25,6 +25,30 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
     const withdr = (g.withdrawals  || []).reduce((a, x) => a + x.amount, 0);
     return s + Math.max(0, alloc - withdr);
   }, 0);
+  const allTransactions = months.flatMap(month => {
+    const data = monthsData[month.key];
+    return data ? [...(data.history || []), ...(data.creditHistory || [])] : [];
+  });
+  const yearlySubcategoryTotals = customCategories.map(category => ({
+    ...category,
+    total: allTransactions
+      .filter(item => item.subcategory?.id === category.id)
+      .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0),
+  })).filter(category => category.total > 0);
+  const unassignedIncome = allTransactions
+    .filter(item => !item.subcategory && item.transaction.amount >= 0)
+    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+  const unassignedExpense = allTransactions
+    .filter(item => !item.subcategory && item.transaction.amount < 0)
+    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+  const incomeSubcategories = [
+    ...yearlySubcategoryTotals.filter(category => category.type === 'income'),
+    { id: '__yearly-unassigned-income', name: 'Nezaradené', type: 'income', total: unassignedIncome, unassigned: true },
+  ];
+  const expenseSubcategories = [
+    ...yearlySubcategoryTotals.filter(category => category.type === 'expense'),
+    { id: '__yearly-unassigned-expense', name: 'Nezaradené', type: 'expense', total: unassignedExpense, unassigned: true },
+  ];
 
   return (
     <div className="yearly-screen">
@@ -102,6 +126,28 @@ export default function YearlyScreen({ months, monthsData, savingsGoals, onAddGo
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="subcategory-summary yearly-subcategory-summary">
+          <h3 className="subcategory-summary-title">Podkategórie za celý rok</h3>
+          <section>
+            <h4 className="subcategory-summary-heading">Príjmy</h4>
+            {incomeSubcategories.map(category => (
+              <div key={category.id} className={`subcategory-summary-row subcategory-summary-row--income${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`}>
+                <span>{category.name}</span>
+                <strong>+{category.total.toFixed(2)} €</strong>
+              </div>
+            ))}
+          </section>
+          <section>
+            <h4 className="subcategory-summary-heading">Výdavky</h4>
+            {expenseSubcategories.map(category => (
+              <div key={category.id} className={`subcategory-summary-row subcategory-summary-row--expense${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`}>
+                <span>{category.name}</span>
+                <strong>-{category.total.toFixed(2)} €</strong>
+              </div>
+            ))}
+          </section>
         </div>
       </>}
     </div>

@@ -19,6 +19,7 @@ function App() {
   const [monthsData, setMonthsData]       = useState({});
   const [savingsGoals, setSavingsGoals]   = useState([]);
   const [customCategories, setCustomCategories] = useState(DEFAULT_SUBCATEGORIES);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [dataLoadError, setDataLoadError] = useState(null);
   const [dataSaveError, setDataSaveError] = useState(null);
   const months = useMemo(() => generateMonths(), []);
@@ -49,10 +50,11 @@ function App() {
     let cancelled = false;
 
     loadUserData(user.id)
-      .then(({ monthsData: md, savingsGoals: sg }) => {
+      .then(({ monthsData: md, savingsGoals: sg, customCategories: cc }) => {
         if (cancelled) return;
         setMonthsData(md);
         setSavingsGoals(sg);
+        setCustomCategories(cc ?? DEFAULT_SUBCATEGORIES);
         dataLoadedForUser.current = true;
         isInitialLoad.current = false;
       })
@@ -70,14 +72,14 @@ function App() {
     if (!user || isInitialLoad.current || !dataLoadedForUser.current || dataLoadError || dataSaveError) return;
     const timer = setTimeout(async () => {
       try {
-        await saveUserData(user.id, monthsData, savingsGoals);
+        await saveUserData(user.id, monthsData, savingsGoals, customCategories);
       } catch (error) {
         console.error('Nepodarilo sa uložiť dáta:', error);
         setDataSaveError(error);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [monthsData, savingsGoals, user, dataLoadError, dataSaveError]);
+  }, [monthsData, savingsGoals, customCategories, user, dataLoadError, dataSaveError]);
 
   const handleReset = () => {
     setMonthsData(prev => { const { [selectedMonth.key]: _, ...rest } = prev; return rest; });
@@ -94,7 +96,12 @@ function App() {
 
   const handleSelect = month => {
     setSelectedMonth(month);
+    setSelectedSubcategory(null);
     setScreen(monthsData[month.key] ? 'results' : 'swipe');
+  };
+
+  const handleSelectCurrentSubcategory = subcategory => {
+    setSelectedSubcategory(subcategory);
   };
 
   const handleComplete = (history, creditHistory) => {
@@ -126,7 +133,7 @@ function App() {
   }
 
   if (screen === 'yearly') {
-    return <YearlyScreen months={months} monthsData={monthsData} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenSettings={() => setScreen('settings')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />;
+    return <YearlyScreen months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenSettings={() => setScreen('settings')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />;
   }
 
   if (screen === 'settings') {
@@ -163,6 +170,9 @@ function App() {
       creditHistory={data.creditHistory}
       savingsGoals={savingsGoals}
       customCategories={customCategories}
+      selectedSubcategory={selectedSubcategory}
+      onSelectSubcategory={handleSelectCurrentSubcategory}
+      onClearSubcategory={() => setSelectedSubcategory(null)}
       onUpdateHistory={handleUpdateHistory}
       onUpdateCreditHistory={handleUpdateCreditHistory}
       onUpdateGoal={handleUpdateGoal}
