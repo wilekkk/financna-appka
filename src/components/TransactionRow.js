@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { CATS, CAT_MAP } from '../constants';
+import { getRemainingAmount } from '../utils/finance';
 import SaveToGoalModal from './SaveToGoalModal';
 import WithdrawFromGoalModal from './WithdrawFromGoalModal';
 
 function getBubbleAmounts(item) {
-  const abs = Math.abs(item.transaction.amount);
+  const abs = getRemainingAmount(item);
   if (item.category === 'split') {
     return {
       needs:   (abs * (item.splits.needs   || 0)) / 100,
@@ -45,7 +46,7 @@ function EditableBubble({ value, color, emoji, onChange }) {
   );
 }
 
-export default function TransactionRow({ item, editMode, savingsGoals, customCategories, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory }) {
+export default function TransactionRow({ item, editMode, savingsGoals, customCategories, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory, onClearPair, onUndoClear }) {
   const [confirmDelete, setConfirmDelete]         = useState(false);
   const [editingAmount, setEditingAmount]         = useState(false);
   const [amountInput, setAmountInput]             = useState('');
@@ -53,7 +54,10 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showSubcategoryMenu, setShowSubcategoryMenu] = useState(false);
   const isCredit   = item._type === 'credit';
-  const abs        = Math.abs(item.transaction.amount);
+  const originalAbs = Math.abs(item.transaction.amount);
+  const abs        = getRemainingAmount(item);
+  const clearings  = Array.isArray(item.clearing) ? item.clearing : item.clearing ? [item.clearing] : [];
+  const isCleared  = clearings.length > 0;
   const bubbleCats = CATS.filter(c => c.key !== 'prijem');
   const amounts    = isCredit ? null : getBubbleAmounts(item);
   const sum        = amounts ? amounts.needs + amounts.wants + amounts.savings : abs;
@@ -87,7 +91,25 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
   const assignedSubcategory = item.subcategory;
 
   return (
-    <div className={`tx-row${editMode && !isValid ? ' tx-row--invalid' : ''}`}>
+    <div
+      className={`tx-row${editMode && !isValid ? ' tx-row--invalid' : ''}${isCleared ? ' tx-row--cleared' : ''}`}
+      draggable={editMode && abs > 0.005}
+      onDragStart={e => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ type: item._type, idx: item._idx }));
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      onDragOver={e => { if (editMode && abs > 0.005) e.preventDefault(); }}
+      onDrop={e => {
+        e.preventDefault();
+        if (!editMode || abs <= 0.005) return;
+        try {
+          const source = JSON.parse(e.dataTransfer.getData('application/json'));
+          onClearPair(source, { type: item._type, idx: item._idx });
+        } catch {
+          // Ignore drops that did not originate from a transaction row.
+        }
+      }}
+    >
       <div className="tx-row-top">
         {editMode && (
           <button className="tx-delete-btn" onClick={() => setConfirmDelete(c => !c)}>×</button>
@@ -116,9 +138,9 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           <span
             className={`tx-amount${editMode ? ' tx-amount--editable' : ''}`}
             style={{ color: isCredit ? '#22c55e' : '#ef4444' }}
-            onClick={editMode ? () => { setAmountInput(Math.abs(item.transaction.amount).toFixed(2)); setEditingAmount(true); } : undefined}
+            onClick={editMode && !isCleared ? () => { setAmountInput(abs.toFixed(2)); setEditingAmount(true); } : undefined}
           >
-            {item.transaction.amount.toFixed(2)} €
+            {(isCredit ? abs : -abs).toFixed(2)} €
           </span>
         )}
       </div>
@@ -137,7 +159,7 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           {isCredit ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="summary-tag" style={{ background: CAT_MAP['prijem'].color, whiteSpace: 'nowrap' }}>
-                {CAT_MAP['prijem'].emoji} {item.transaction.amount.toFixed(2)} €
+                {CAT_MAP['prijem'].emoji} {abs.toFixed(2)} €
               </span>
               {txWithdrawals.length > 0 && txWithdrawals.map((w) => (
                 <span
@@ -205,6 +227,20 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
                     Zrušiť priradenie
                   </button>
                 )}
+              </div>
+            )}
+
+            {isCleared && !confirmDelete && (
+              <div className="tx-clearing-row">
+                <div className="tx-clearing-list">
+                  {clearings.map(clearing => (
+                    <span className="tx-clearing-label" key={clearing.id}>
+                      − {clearing.with || 'Vyrovnané'} · {clearing.amount.toFixed(2)} €
+                      <button className="tx-clearing-undo" onClick={() => onUndoClear(clearing.id)}>Vrátiť</button>
+                    </span>
+                  ))}
+                  <span className="tx-clearing-total">zostáva {abs.toFixed(2)} € z {originalAbs.toFixed(2)} €</span>
+                </div>
               </div>
             )}
           </div>

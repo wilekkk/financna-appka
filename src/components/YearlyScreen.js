@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { calcMonthTotals } from '../utils/finance';
+import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
 import MonthlyBarChart from './MonthlyBarChart';
 import SporeniTab from './SporeniTab';
 
@@ -33,14 +33,14 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
     ...category,
     total: allTransactions
       .filter(item => item.subcategory?.id === category.id)
-      .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0),
+      .reduce((sum, item) => sum + getRemainingAmount(item), 0),
   })).filter(category => category.total > 0);
   const unassignedIncome = allTransactions
     .filter(item => !item.subcategory && item.transaction.amount >= 0)
-    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+    .reduce((sum, item) => sum + getRemainingAmount(item), 0);
   const unassignedExpense = allTransactions
     .filter(item => !item.subcategory && item.transaction.amount < 0)
-    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+    .reduce((sum, item) => sum + getRemainingAmount(item), 0);
   const incomeSubcategories = [
     ...yearlySubcategoryTotals.filter(category => category.type === 'income'),
     { id: '__yearly-unassigned-income', name: 'Nezaradené', type: 'income', total: unassignedIncome, unassigned: true },

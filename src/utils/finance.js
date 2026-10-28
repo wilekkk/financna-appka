@@ -1,14 +1,20 @@
 import { MONTH_NAMES } from '../constants';
 
+export function getRemainingAmount(item) {
+  const amount = Math.abs(item?.transaction?.amount || 0);
+  const clearings = Array.isArray(item?.clearing) ? item.clearing : item?.clearing ? [item.clearing] : [];
+  return Math.max(0, amount - clearings.reduce((sum, clearing) => sum + (clearing.amount || 0), 0));
+}
+
 export function calcMonthTotals(history, creditHistory) {
   const catTotals = { needs: 0, wants: 0, savings: 0 };
   history.forEach(item => {
-    const abs = Math.abs(item.transaction.amount);
+    const abs = getRemainingAmount(item);
     if (item.category === 'split') { Object.keys(catTotals).forEach(k => { catTotals[k] += (abs * (item.splits[k] || 0)) / 100; }); }
     else if (item.category in catTotals) { catTotals[item.category] += abs; }
   });
   const totalExpenses = catTotals.needs + catTotals.wants + catTotals.savings;
-  const totalIncome   = creditHistory.reduce((s, i) => s + i.transaction.amount, 0);
+  const totalIncome   = creditHistory.reduce((s, i) => s + getRemainingAmount(i), 0);
   return { totalIncome, totalExpenses, catTotals };
 }
 

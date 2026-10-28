@@ -1,5 +1,5 @@
 import { CATS } from '../constants';
-import { calcMonthTotals } from '../utils/finance';
+import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
 import PieChart from './PieChart';
 
 export default function DashboardTab({ history, creditHistory, customCategories, onSelectSubcategory }) {
@@ -9,16 +9,16 @@ export default function DashboardTab({ history, creditHistory, customCategories,
     ...category,
     total: [...creditHistory, ...history]
       .filter(item => item.subcategory?.id === category.id)
-      .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0),
+      .reduce((sum, item) => sum + getRemainingAmount(item), 0),
   })).filter(category => category.total > 0);
   const incomeTransactions = creditHistory.map(item => ({ ...item, type: 'income' }));
   const expenseTransactions = history.map(item => ({ ...item, type: 'expense' }));
   const unassignedIncome = incomeTransactions
     .filter(item => !item.subcategory)
-    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+    .reduce((sum, item) => sum + getRemainingAmount(item), 0);
   const unassignedExpense = expenseTransactions
     .filter(item => !item.subcategory)
-    .reduce((sum, item) => sum + Math.abs(item.transaction.amount), 0);
+    .reduce((sum, item) => sum + getRemainingAmount(item), 0);
   const incomeSubcategories = [
     ...subcategoryTotals.filter(category => category.type === 'income'),
     { id: '__unassigned-income', name: 'Nezaradené', type: 'income', total: unassignedIncome, unassigned: true },

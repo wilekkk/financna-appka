@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
+import { getRemainingAmount } from '../utils/finance';
+import AddTransactionModal from './AddTransactionModal';
 
 export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
   const [tab, setTab]                         = useState(selectedSubcategory ? 'table' : 'dashboard');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
+
+  const handleAddTransaction = item => {
+    if (item.category === 'prijem') onUpdateCreditHistory([...creditHistory, item]);
+    else onUpdateHistory([...history, item]);
+    setShowAddTransaction(false);
+  };
 
   const handleUpdateAmounts = (idx, newAmounts, total) => {
     const pct = v => total > 0 ? parseFloat(((v / total) * 100).toFixed(4)) : 0;
@@ -16,8 +25,64 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
   };
 
   const handleDelete = (type, idx) => {
-    if (type === 'debit')  onUpdateHistory(history.filter((_, i) => i !== idx));
-    else                   onUpdateCreditHistory(creditHistory.filter((_, i) => i !== idx));
+    const item = type === 'debit' ? history[idx] : creditHistory[idx];
+    const removeClearing = items => items.map(entry =>
+      entry.clearing?.some?.(clearing => item?.clearing?.some(itemClearing => itemClearing.id === clearing.id))
+        ? { ...entry, clearing: entry.clearing.filter(clearing => !item.clearing.some(itemClearing => itemClearing.id === clearing.id)) }
+        : entry
+    );
+    if (type === 'debit') {
+      onUpdateHistory(history.filter((_, i) => i !== idx));
+      if (item?.clearing) onUpdateCreditHistory(removeClearing(creditHistory));
+    } else {
+      onUpdateCreditHistory(creditHistory.filter((_, i) => i !== idx));
+      if (item?.clearing) onUpdateHistory(removeClearing(history));
+    }
+  };
+
+  const handleClearPair = (source, target) => {
+    if (!source || !target || source.type === target.type) return;
+    const sourceItem = source.type === 'debit' ? history[source.idx] : creditHistory[source.idx];
+    const targetItem = target.type === 'debit' ? history[target.idx] : creditHistory[target.idx];
+    if (!sourceItem || !targetItem) return;
+    const sourceAmount = getRemainingAmount(sourceItem);
+    const targetAmount = getRemainingAmount(targetItem);
+    const amount = Math.min(sourceAmount, targetAmount);
+    if (amount <= 0.005) return;
+    const clearingId = `${Date.now()}-${Math.random()}`;
+    const sourceClearing = { id: clearingId, amount, with: targetItem.transaction.store };
+    const targetClearing = { id: clearingId, amount, with: sourceItem.transaction.store };
+    const appendClearing = (item, entry) => ({
+      ...item,
+      clearing: [...(Array.isArray(item.clearing) ? item.clearing : item.clearing ? [item.clearing] : []), entry],
+    });
+    const update = (items, type, ref, entry) => items.map((item, index) =>
+      ref.type === type && ref.idx === index
+        ? appendClearing(item, entry)
+        : item
+    );
+    onUpdateHistory(update(
+      update(history, 'debit', source, sourceClearing),
+      'debit',
+      target,
+      targetClearing
+    ));
+    onUpdateCreditHistory(update(
+      update(creditHistory, 'credit', source, sourceClearing),
+      'credit',
+      target,
+      targetClearing
+    ));
+  };
+
+  const handleUndoClear = clearingId => {
+    const remove = items => items.map(item =>
+      Array.isArray(item.clearing)
+        ? { ...item, clearing: item.clearing.filter(clearing => clearing.id !== clearingId) }
+        : item.clearing?.id === clearingId ? ({ ...item, clearing: undefined }) : item
+    );
+    onUpdateHistory(remove(history));
+    onUpdateCreditHistory(remove(creditHistory));
   };
 
   const handleAllocateToGoal = (allocs, txRef) => {
@@ -73,6 +138,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
       <div className="nav-header">
         <button className="back-btn" onClick={onBack}>← Späť</button>
         <span className="nav-title">{month.label}</span>
+        <button className="reset-month-btn" onClick={() => setShowResetConfirm(true)}>↺ Reset</button>
       </div>
       <div className="tabs">
         <button className={`tab-btn${tab === 'dashboard' ? ' tab-btn--active' : ''}`} onClick={() => setTab('dashboard')}>Dashboard</button>
@@ -86,8 +152,9 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
           >
             ⚙️ Upraviť
           </button>
+          {editMode && <span className="clearing-hint">Potiahni príjem na výdavok (alebo opačne) a vyrovnaj ich</span>}
           <button className="add-more-btn" onClick={onAddMore}>+ Nahrať výpis</button>
-          <button className="reset-month-btn" onClick={() => setShowResetConfirm(true)}>↺ Reset</button>
+          <button className="add-transaction-btn" onClick={() => setShowAddTransaction(true)}>+ Pridať transakciu</button>
         </div>
       )}
 
@@ -118,6 +185,9 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
           </div>
         </div>
       )}
+      {showAddTransaction && (
+        <AddTransactionModal onConfirm={handleAddTransaction} onCancel={() => setShowAddTransaction(false)} />
+      )}
       {tab === 'table'
         ? <>
           {selectedSubcategory && (
@@ -140,6 +210,8 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             onAddGoal={onAddGoal}
             onWithdrawalsChanged={handleWithdrawalsChanged}
             onAssignSubcategory={handleAssignSubcategory}
+            onClearPair={handleClearPair}
+            onUndoClear={handleUndoClear}
           />
         </>
         : <DashboardTab
