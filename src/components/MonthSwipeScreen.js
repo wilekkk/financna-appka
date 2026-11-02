@@ -12,7 +12,6 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
   const [index, setIndex]             = useState(0);
   const [flash, setFlash]             = useState(null);
   const [showSplit, setShowSplit]     = useState(false);
-  const [noNew, setNoNew]             = useState(false);
   const historyRef = useRef([]);
 
   const handleLoad = (transactions) => {
@@ -30,13 +29,7 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
     setIndex(0);
 
     if (debits.length === 0) {
-      if (newCredits.length > 0 || existingHistory.length > 0) {
-        setNoNew(true);
-        setSubScreen('swiping');
-        onComplete([...existingHistory], [...existingCreditHistory, ...newCredits]);
-      } else {
-        onComplete([], newCredits);
-      }
+      onComplete([...existingHistory], [...existingCreditHistory, ...newCredits]);
     } else {
       setSubScreen('swiping');
     }
@@ -70,23 +63,6 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
           </div>
         )}
         <UploadZone onLoad={handleLoad} />
-      </div>
-    );
-  }
-
-  if (noNew) {
-    return (
-      <div className="screen">
-        <div className="nav-header">
-          <button className="back-btn" onClick={onBack}>← Späť</button>
-          <span className="nav-title">{month.label}</span>
-        </div>
-        <div className="no-new-screen">
-          <div className="no-new-icon">✓</div>
-          <p className="no-new-title">Žiadne nové transakcie</p>
-          <p className="no-new-sub">Všetky transakcie z výpisu už boli nahrané.</p>
-          <button className="months-btn" onClick={onBack}>Späť na prehľad</button>
-        </div>
       </div>
     );
   }

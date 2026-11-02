@@ -22,7 +22,6 @@ export default function DashboardTab({ history, creditHistory, customCategories,
     ...subcategoryTotals.filter(category => category.type === 'expense'),
     { id: '__unassigned-expense', name: 'Nezaradené', type: 'expense', total: unassignedExpense, unassigned: true },
   ];
-  const hasSubcategorySummary = incomeSubcategories.length > 0 || expenseSubcategories.length > 0;
 
   return (
     <div className="dashboard-tab">
@@ -46,33 +45,27 @@ export default function DashboardTab({ history, creditHistory, customCategories,
         </div>
       </div>
 
-      {hasSubcategorySummary && (
-        <div className="subcategory-summary">
-          <h3 className="subcategory-summary-title">Podkategórie</h3>
-          {incomeSubcategories.length > 0 && (
-            <section>
-              <h4 className="subcategory-summary-heading">Príjmy</h4>
-              {incomeSubcategories.map(category => (
-                <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--income${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
-                  <span>{category.name}</span>
-                  <strong>+{category.total.toFixed(2)} €</strong>
-                </button>
-              ))}
-            </section>
-          )}
-          {expenseSubcategories.length > 0 && (
-            <section>
-              <h4 className="subcategory-summary-heading">Výdavky</h4>
-              {expenseSubcategories.map(category => (
-                <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--expense${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
-                  <span>{category.name}</span>
-                  <strong>-{category.total.toFixed(2)} €</strong>
-                </button>
-              ))}
-            </section>
-          )}
-        </div>
-      )}
+      <div className="subcategory-summary">
+        <h3 className="subcategory-summary-title">Podkategórie</h3>
+        <section>
+          <h4 className="subcategory-summary-heading">Príjmy</h4>
+          {incomeSubcategories.map(category => (
+            <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--income${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
+              <span>{category.name}</span>
+              <strong>+{category.total.toFixed(2)} €</strong>
+            </button>
+          ))}
+        </section>
+        <section>
+          <h4 className="subcategory-summary-heading">Výdavky</h4>
+          {expenseSubcategories.map(category => (
+            <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--expense${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
+              <span>{category.name}</span>
+              <strong>-{category.total.toFixed(2)} €</strong>
+            </button>
+          ))}
+        </section>
+      </div>
     </div>
   );
 }

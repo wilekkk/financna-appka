@@ -30,8 +30,8 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
         <section className="category-group">
           <h2 className="category-group-title">Príjmové kategórie</h2>
           {customCategories.filter(category => category.type === 'income').map(category => (
-            <div className="category-row" key={category.id || category.key}>
-              <span>{category.label || category.name}</span>
+            <div className="category-row" key={category.id}>
+              <span>{category.name}</span>
               <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}>×</button>
             </div>
           ))}
@@ -42,8 +42,8 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
         <section className="category-group">
           <h2 className="category-group-title">Výdavkové kategórie</h2>
           {customCategories.filter(category => category.type === 'expense').map(category => (
-            <div className="category-row" key={category.id || category.key}>
-              <span>{category.label || category.name}</span>
+            <div className="category-row" key={category.id}>
+              <span>{category.name}</span>
               <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}>×</button>
             </div>
           ))}

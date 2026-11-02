@@ -80,7 +80,6 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
       .filter(w => w.store === item.transaction.store && w.date === item.transaction.date)
       .map(w => ({ goalId: g.id, goalName: g.name, amount: w.amount, withdrawalId: w.id }))
   );
-  const totalWithdrawnForTx = txWithdrawals.reduce((s, w) => s + w.amount, 0); // eslint-disable-line no-unused-vars
   const goalsHaveBalance      = savingsGoals.some(g => {
     const net = (g.allocations || []).reduce((s, a) => s + a.amount, 0)
               - (g.withdrawals  || []).reduce((s, w) => s + w.amount, 0);

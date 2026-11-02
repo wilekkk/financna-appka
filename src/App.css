@@ -1823,7 +1823,7 @@ body {
 
 .restart-btn:active { background: #4f46e5; transform: scale(0.97); }
 
-/* ── Add-more / no-new ───────────────────────────────────────────────────── */
+/* ── Add-more ────────────────────────────────────────────────────────────── */
 
 .add-more-info {
   background: #eff6ff;
@@ -1834,35 +1834,6 @@ body {
   color: #1d4ed8;
   font-weight: 500;
   margin-bottom: 4px;
-}
-
-.no-new-screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 32px 16px;
-  text-align: center;
-}
-
-.no-new-icon {
-  font-size: 48px;
-  color: #22c55e;
-}
-
-.no-new-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.no-new-sub {
-  margin: 0;
-  font-size: 14px;
-  color: #64748b;
 }
 
 /* ── Auth screen ─────────────────────────────────────────────────────────── */

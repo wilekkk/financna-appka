@@ -109,8 +109,6 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
       const ng = nextGoals.find(g => g.id === goalId);
       if (ng) onUpdateGoal(goalId, { withdrawals: ng.withdrawals });
     });
-
-    onUpdateCreditHistory(creditHistory);
   };
 
   const handleUpdateAmount = (type, idx, newAbs) => {

@@ -33,11 +33,6 @@ export function calcSubcategoryTotals(items, customCategories) {
   return [...totals.values()].filter(category => category.total > 0);
 }
 
-export function getPrevMonthKey(key) {
-  const [y, m] = key.split('-').map(Number);
-  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
-}
-
 export function generateMonths() {
   const year = new Date().getFullYear();
   return MONTH_NAMES.map((name, m) => ({
