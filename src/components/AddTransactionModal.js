@@ -1,8 +1,13 @@
 import { useState } from 'react';
 
-const today = () => {
-  const date = new Date();
-  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+// Accepts d.m.yyyy or dd.mm.yyyy and returns dd.mm.yyyy, or null for an invalid date.
+const normalizeDate = str => {
+  const match = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!match) return null;
+  const [, d, m, y] = match.map(Number);
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+  return `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
 };
 
 export default function AddTransactionModal({ onConfirm, onCancel }) {
@@ -28,12 +33,17 @@ export default function AddTransactionModal({ onConfirm, onCancel }) {
       setError('Vyber kategóriu výdavku.');
       return;
     }
+    const parsedDate = date.trim() ? normalizeDate(date.trim()) : '';
+    if (parsedDate === null) {
+      setError('Zadaj dátum v tvare dd.mm.rrrr.');
+      return;
+    }
     onConfirm({
       transaction: {
         id: `manual-${Date.now()}`,
         store: store.trim(),
         amount: type === 'expense' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount),
-        date: date.trim() || today(),
+        date: parsedDate,
         typ: type === 'expense' ? 'debet' : 'kredit',
       },
       category: type === 'expense' ? category : 'prijem',

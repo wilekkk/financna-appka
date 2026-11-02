@@ -129,7 +129,17 @@ function App() {
   }
 
   if (dataLoadError || dataSaveError) {
-    return <div className="auth-screen"><div className="auth-loading">Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.</div></div>;
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-loading">Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.</div>
+          <div className="dialog-actions">
+            <button className="dialog-cancel-btn" onClick={() => supabase.auth.signOut()}>Odhlásiť sa</button>
+            <button className="primary-action-btn" onClick={() => window.location.reload()}>Obnoviť stránku</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (screen === 'yearly') {
