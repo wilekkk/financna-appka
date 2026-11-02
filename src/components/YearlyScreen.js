@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
+import { calcMonthTotals, calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
 import MonthlyBarChart from './MonthlyBarChart';
 import SporeniTab from './SporeniTab';
 
@@ -29,12 +29,7 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
     const data = monthsData[month.key];
     return data ? [...(data.history || []), ...(data.creditHistory || [])] : [];
   });
-  const yearlySubcategoryTotals = customCategories.map(category => ({
-    ...category,
-    total: allTransactions
-      .filter(item => item.subcategory?.id === category.id)
-      .reduce((sum, item) => sum + getRemainingAmount(item), 0),
-  })).filter(category => category.total > 0);
+  const yearlySubcategoryTotals = calcSubcategoryTotals(allTransactions, customCategories);
   const unassignedIncome = allTransactions
     .filter(item => !item.subcategory && item.transaction.amount >= 0)
     .reduce((sum, item) => sum + getRemainingAmount(item), 0);

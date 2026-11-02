@@ -18,6 +18,21 @@ export function calcMonthTotals(history, creditHistory) {
   return { totalIncome, totalExpenses, catTotals };
 }
 
+// Totals per subcategory. Subcategories deleted in settings are kept under the name stored on the transaction.
+export function calcSubcategoryTotals(items, customCategories) {
+  const totals = new Map(customCategories.map(category => [category.id, { ...category, total: 0 }]));
+  items.forEach(item => {
+    const subcategory = item.subcategory;
+    if (!subcategory) return;
+    if (!totals.has(subcategory.id)) {
+      const type = subcategory.type || (item.transaction.amount >= 0 ? 'income' : 'expense');
+      totals.set(subcategory.id, { ...subcategory, type, total: 0 });
+    }
+    totals.get(subcategory.id).total += getRemainingAmount(item);
+  });
+  return [...totals.values()].filter(category => category.total > 0);
+}
+
 export function getPrevMonthKey(key) {
   const [y, m] = key.split('-').map(Number);
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;

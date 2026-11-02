@@ -1,16 +1,11 @@
 import { CATS } from '../constants';
-import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
+import { calcMonthTotals, calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
 import PieChart from './PieChart';
 
 export default function DashboardTab({ history, creditHistory, customCategories, onSelectSubcategory }) {
   const { totalIncome, totalExpenses, catTotals } = calcMonthTotals(history, creditHistory);
   const slices = CATS.filter(c => c.key !== 'prijem').map(c => ({ ...c, value: catTotals[c.key] }));
-  const subcategoryTotals = customCategories.map(category => ({
-    ...category,
-    total: [...creditHistory, ...history]
-      .filter(item => item.subcategory?.id === category.id)
-      .reduce((sum, item) => sum + getRemainingAmount(item), 0),
-  })).filter(category => category.total > 0);
+  const subcategoryTotals = calcSubcategoryTotals([...creditHistory, ...history], customCategories);
   const incomeTransactions = creditHistory.map(item => ({ ...item, type: 'income' }));
   const expenseTransactions = history.map(item => ({ ...item, type: 'expense' }));
   const unassignedIncome = incomeTransactions
