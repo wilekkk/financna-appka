@@ -3,6 +3,8 @@ import { supabase } from '../supabaseClient';
 
 export default function AuthScreen() {
   const [mode, setMode]       = useState('login');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,11 @@ export default function AuthScreen() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { first_name: firstName.trim(), last_name: lastName.trim() } },
+      });
       if (error) setError(error.message);
       else setInfo('Skontroluj email a potvrď registráciu.');
     }
@@ -37,6 +43,26 @@ export default function AuthScreen() {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          {mode === 'register' && (
+            <>
+              <label className="auth-label">Meno (voliteľné)</label>
+              <input
+                className="auth-input"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                autoComplete="given-name"
+              />
+
+              <label className="auth-label">Priezvisko (voliteľné)</label>
+              <input
+                className="auth-input"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                autoComplete="family-name"
+              />
+            </>
+          )}
+
           <label className="auth-label">Email</label>
           <input
             className="auth-input"

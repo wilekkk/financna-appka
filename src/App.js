@@ -10,6 +10,7 @@ import HomeScreen from './components/HomeScreen';
 import MonthSwipeScreen from './components/MonthSwipeScreen';
 import ResultsScreen from './components/ResultsScreen';
 import SettingsScreen from './components/SettingsScreen';
+import ProfileScreen from './components/ProfileScreen';
 import CategoriesScreen from './components/CategoriesScreen';
 
 function App() {
@@ -147,7 +148,11 @@ function App() {
   }
 
   if (screen === 'settings') {
-    return <SettingsScreen onBack={() => setScreen('yearly')} onOpenCategories={() => setScreen('categories')} />;
+    return <SettingsScreen onBack={() => setScreen('yearly')} onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} />;
+  }
+
+  if (screen === 'profile') {
+    return <ProfileScreen user={user} onBack={() => setScreen('settings')} />;
   }
 
   if (screen === 'categories') {

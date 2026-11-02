@@ -1,4 +1,4 @@
-export default function SettingsScreen({ onBack, onOpenCategories }) {
+export default function SettingsScreen({ onBack, onOpenProfile, onOpenCategories }) {
   return (
     <div className="yearly-screen">
       <div className="nav-header">
@@ -7,6 +7,10 @@ export default function SettingsScreen({ onBack, onOpenCategories }) {
       </div>
 
       <div className="settings-list">
+        <button className="settings-list-item" onClick={onOpenProfile}>
+          <span>Profil</span>
+          <span className="settings-list-arrow">→</span>
+        </button>
         <button className="settings-list-item" onClick={onOpenCategories}>
           <span>Podkategórie príjmov/výdavkov</span>
           <span className="settings-list-arrow">→</span>
