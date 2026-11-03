@@ -30,7 +30,9 @@ export function calcSubcategoryTotals(items, customCategories) {
     }
     totals.get(subcategory.id).total += getRemainingAmount(item);
   });
-  return [...totals.values()].filter(category => category.total > 0);
+  return [...totals.values()]
+    .filter(category => category.total > 0)
+    .sort((a, b) => b.total - a.total);
 }
 
 export function generateMonths() {
