@@ -778,6 +778,76 @@ body {
 
 .add-goal-btn:active { background: #2563eb; }
 
+.goals-archived summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.goal-card--archived { opacity: 0.6; }
+
+.goal-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.goal-toggle-arrow {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.goal-movements {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-movement {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.goal-movement-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  min-width: 72px;
+}
+
+.goal-movement-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1e293b;
+}
+
+.goal-movement-amount {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.goal-movement-amount--out { color: #22c55e; }
+
 .goal-form {
   width: 100%;
   display: flex;

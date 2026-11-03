@@ -3,11 +3,18 @@ import { useState } from 'react';
 export default function GoalForm({ goal, onSave, onCancel }) {
   const [name, setName]     = useState(goal?.name ?? '');
   const [amount, setAmount] = useState(goal?.targetAmount != null ? goal.targetAmount.toFixed(2) : '');
+  const existingInitial = goal?.allocations?.find(a => a.initial);
+  const [initial, setInitial] = useState(existingInitial ? existingInitial.amount.toFixed(2) : '');
 
   const handleSave = () => {
     if (!name.trim()) return;
     const parsed = parseFloat(amount.replace(',', '.'));
-    onSave({ name: name.trim(), targetAmount: parsed > 0 ? parsed : null });
+    const parsedInitial = parseFloat(initial.replace(',', '.'));
+    const allocations = (goal?.allocations || []).filter(a => !a.initial);
+    if (parsedInitial > 0) {
+      allocations.unshift({ id: existingInitial?.id ?? Date.now(), initial: true, amount: parsedInitial });
+    }
+    onSave({ name: name.trim(), targetAmount: parsed > 0 ? parsed : null, allocations });
   };
 
   return (
@@ -21,6 +28,12 @@ export default function GoalForm({ goal, onSave, onCancel }) {
           <div className="goal-amount-row">
             <input className="goal-input" type="number" step="0.01" placeholder="Cieľová suma (voliteľné)"
               value={amount} onChange={e => setAmount(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()} />
+            <span className="goal-eur">€</span>
+          </div>
+          <div className="goal-amount-row">
+            <input className="goal-input" type="number" step="0.01" placeholder="Už nasporené (voliteľné)"
+              value={initial} onChange={e => setInitial(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()} />
             <span className="goal-eur">€</span>
           </div>

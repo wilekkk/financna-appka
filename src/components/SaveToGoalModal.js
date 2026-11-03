@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 
-export default function SaveToGoalModal({ transaction, savingsAmount, goals, onConfirm, onCancel, onAddGoal }) {
+export default function SaveToGoalModal({ transaction, savingsAmount, goals: allGoals, onConfirm, onCancel, onAddGoal }) {
+  const goals = allGoals.filter(g => !g.archived);
   const [selections, setSelections] = useState(
     Object.fromEntries(goals.map(g => [g.id, { selected: false, amount: '' }]))
   );
