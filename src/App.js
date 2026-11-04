@@ -12,6 +12,14 @@ import ResultsScreen from './components/ResultsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import ProfileScreen from './components/ProfileScreen';
 import CategoriesScreen from './components/CategoriesScreen';
+import BottomNav from './components/BottomNav';
+
+// Ktorá položka spodného menu svieti na ktorej obrazovke. Obrazovky bez položky menu nemajú.
+const NAV_FOR_SCREEN = {
+  yearly: 'prehled', savings: 'sporenie', months: 'mesiace', results: 'mesiace',
+  settings: 'nastavenia', profile: 'nastavenia', categories: 'nastavenia',
+};
+const SCREEN_FOR_NAV = { prehled: 'yearly', sporenie: 'savings', mesiace: 'months', nastavenia: 'settings' };
 
 function App() {
   const [user, setUser]                    = useState(undefined); // undefined = loading
@@ -143,24 +151,32 @@ function App() {
     );
   }
 
-  if (screen === 'yearly') {
-    return <YearlyScreen months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenSettings={() => setScreen('settings')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />;
+  const nav = NAV_FOR_SCREEN[screen];
+  const withNav = content => (
+    <>
+      {content}
+      <BottomNav active={nav} onNavigate={key => setScreen(SCREEN_FOR_NAV[key])} />
+    </>
+  );
+
+  if (screen === 'yearly' || screen === 'savings') {
+    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
   }
 
   if (screen === 'settings') {
-    return <SettingsScreen onBack={() => setScreen('yearly')} onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} />;
+    return withNav(<SettingsScreen onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} />);
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen user={user} onBack={() => setScreen('settings')} />;
+    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} />);
   }
 
   if (screen === 'categories') {
-    return <CategoriesScreen customCategories={customCategories} onAddCategory={handleAddCategory} onDeleteCategory={handleDeleteCategory} onBack={() => setScreen('settings')} />;
+    return withNav(<CategoriesScreen customCategories={customCategories} onAddCategory={handleAddCategory} onDeleteCategory={handleDeleteCategory} onBack={() => setScreen('settings')} />);
   }
 
   if (screen === 'months') {
-    return <HomeScreen months={months} monthsData={monthsData} onSelect={handleSelect} onBack={() => setScreen('yearly')} />;
+    return withNav(<HomeScreen months={months} monthsData={monthsData} onSelect={handleSelect} />);
   }
 
   if (screen === 'swipe') {
@@ -178,8 +194,12 @@ function App() {
   }
 
   const data = monthsData[selectedMonth.key];
-  return (
+  const monthIndex = months.findIndex(m => m.key === selectedMonth.key);
+  const prevMonth = months[monthIndex - 1];
+  const nextMonth = months[monthIndex + 1];
+  return withNav(
     <ResultsScreen
+      key={selectedMonth.key}
       month={selectedMonth}
       history={data.history}
       creditHistory={data.creditHistory}
@@ -195,6 +215,8 @@ function App() {
       onAddMore={handleAddMore}
       onReset={handleReset}
       onBack={() => setScreen('months')}
+      onPrevMonth={prevMonth && monthsData[prevMonth.key] ? () => handleSelect(prevMonth) : null}
+      onNextMonth={nextMonth && monthsData[nextMonth.key] ? () => handleSelect(nextMonth) : null}
     />
   );
 }

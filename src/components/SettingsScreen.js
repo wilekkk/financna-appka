@@ -1,11 +1,10 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-export default function SettingsScreen({ onBack, onOpenProfile, onOpenCategories }) {
+import { ChevronRight } from 'lucide-react';
+export default function SettingsScreen({ onOpenProfile, onOpenCategories }) {
   return (
-    <div className="yearly-screen">
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-        <h1 className="nav-title">Nastavenia</h1>
-      </div>
+    <div className="yearly-screen overview-screen">
+      <header className="screen-header">
+        <h1 className="screen-title">Nastavenia</h1>
+      </header>
 
       <div className="settings-list">
         <button className="settings-list-item" onClick={onOpenProfile}>

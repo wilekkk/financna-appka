@@ -1,4 +1,4 @@
-import { ChevronLeft, SlidersHorizontal, FileUp, RotateCcw, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, SlidersHorizontal, FileUp, RotateCcw, Plus } from 'lucide-react';
 import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
@@ -8,7 +8,7 @@ import { formatMoney } from '../utils/format';
 import Money from './Money';
 import AddTransactionModal from './AddTransactionModal';
 
-export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
+export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack, onPrevMonth, onNextMonth }) {
   const [tab, setTab]                         = useState('table');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -141,10 +141,14 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
   const year = month.key.slice(0, 4);
 
   return (
-    <div className="yearly-screen detail-screen">
+    <div className="yearly-screen detail-screen overview-screen">
       <header className="detail-header">
         <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť na mesiace"><ChevronLeft size={22} strokeWidth={1.75} /></button>
-        <h1 className="screen-title">{month.label} {year}</h1>
+        <div className="month-switch">
+          <button className="icon-btn icon-btn--sm" onClick={onPrevMonth || undefined} disabled={!onPrevMonth} aria-label="Predchádzajúci mesiac"><ChevronLeft size={18} strokeWidth={1.75} /></button>
+          <h1 className="screen-title">{month.label} {year}</h1>
+          <button className="icon-btn icon-btn--sm" onClick={onNextMonth || undefined} disabled={!onNextMonth} aria-label="Nasledujúci mesiac"><ChevronRight size={18} strokeWidth={1.75} /></button>
+        </div>
         <div className="detail-header-actions">
           <button className="icon-btn" onClick={onAddMore} aria-label="Nahrať ďalší výpis" title="Nahrať ďalší výpis"><FileUp size={20} strokeWidth={1.75} /></button>
           <button className="icon-btn" onClick={() => setShowResetConfirm(true)} aria-label="Resetovať mesiac" title="Resetovať mesiac"><RotateCcw size={20} strokeWidth={1.75} /></button>

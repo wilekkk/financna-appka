@@ -1,17 +1,15 @@
-import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { CAT_MAP, MONTH_NAMES_IN } from '../constants';
 import { calcMonthTotals, calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
 import { formatMoney, formatNumber, formatPercent } from '../utils/format';
 import Money from './Money';
 import CashflowChart from './CashflowChart';
-import BottomNav from './BottomNav';
 import SporeniTab from './SporeniTab';
 
 const CAT_KEYS = ['needs', 'wants', 'savings'];
 
-export default function YearlyScreen({ months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenSettings, onSelectMonth, user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('prehled');
+export default function YearlyScreen({ months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout, tab = 'prehled' }) {
+  const activeTab = tab;
   const year = new Date().getFullYear();
   const stats = months.map(({ key, label }) => {
     const data = monthsData[key];
@@ -191,14 +189,6 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
           ))}
         </section>
       </>}
-
-      <BottomNav
-        active={activeTab === 'sporenie' ? 'sporenie' : 'prehled'}
-        onOverview={() => setActiveTab('prehled')}
-        onMonths={onOpenMonths}
-        onSavings={() => setActiveTab('sporenie')}
-        onSettings={onOpenSettings}
-      />
     </div>
   );
 }

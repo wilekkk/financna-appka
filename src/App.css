@@ -176,7 +176,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 100;
   padding: 16px;
   background: var(--overlay);
   display: flex;
@@ -2399,7 +2399,7 @@ body {
 
 /* ── Mesiac (redizajn) ───────────────────────────────────────────────────── */
 
-.detail-screen { gap: 0; padding-top: 8px; padding-bottom: 64px; }
+.detail-screen { padding-top: 8px; }
 
 .detail-header {
   display: grid;
@@ -2558,3 +2558,37 @@ body {
   cursor: pointer;
 }
 .list-row--btn:hover > span:first-child { color: var(--accent); }
+
+/* Miesto pre spodné menu na všetkých obrazovkách s menu */
+.yearly-screen { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+
+/* Prepínanie mesiacov v hlavičke */
+.month-switch { display: flex; align-items: center; gap: 2px; }
+.icon-btn--sm { width: 32px; height: 40px; margin: 0; }
+.icon-btn:disabled { color: var(--ink-4); cursor: default; }
+
+/* Zoznam mesiacov */
+.month-rows { margin-top: 12px; border-top: 1px solid var(--line); }
+.month-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.month-row:hover .month-row-name { color: var(--accent); }
+.month-row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.month-row-name { font-size: 15px; }
+.month-row-sub { display: flex; gap: 12px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.month-row .month-table-bar { margin-top: 6px; max-width: 220px; }
+.month-row-net { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.month-row-chevron { color: var(--ink-4); flex-shrink: 0; margin-right: -4px; }
+.month-row--empty .month-row-name { color: var(--ink-2); }
+.month-row-upload { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--accent); }
