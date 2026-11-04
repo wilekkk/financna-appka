@@ -1,7 +1,8 @@
-import { X, TriangleAlert } from 'lucide-react';
+import { X, TriangleAlert, Target, Undo2 } from 'lucide-react';
 import { useState } from 'react';
-import { CATS, CAT_MAP } from '../constants';
+import { CATS } from '../constants';
 import { getRemainingAmount } from '../utils/finance';
+import { formatMoney, formatNumber, formatPercent } from '../utils/format';
 import SaveToGoalModal from './SaveToGoalModal';
 import WithdrawFromGoalModal from './WithdrawFromGoalModal';
 
@@ -42,12 +43,12 @@ function EditableBubble({ value, color, onChange }) {
   }
   return (
     <span className="summary-tag" style={{ '--tag-color': color, cursor: 'pointer' }} onClick={start}>
-      {value.toFixed(2)} €
+      {formatMoney(value)}
     </span>
   );
 }
 
-export default function TransactionRow({ item, editMode, savingsGoals, customCategories, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory, onClearPair, onUndoClear }) {
+export default function TransactionRow({ item, showDate, editMode, savingsGoals, customCategories, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory, onClearPair, onUndoClear }) {
   const [confirmDelete, setConfirmDelete]         = useState(false);
   const [editingAmount, setEditingAmount]         = useState(false);
   const [amountInput, setAmountInput]             = useState('');
@@ -90,9 +91,14 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
   const subcategories = customCategories.filter(category => category.type === (isCredit ? 'income' : 'expense'));
   const assignedSubcategory = item.subcategory;
 
+  const catParts = amounts
+    ? bubbleCats.filter(c => amounts[c.key] > 0.005).map(c => ({ ...c, pct: abs > 0 ? (amounts[c.key] / abs) * 100 : 0 }))
+    : [];
+  const amountColor = isCredit ? 'var(--positive)' : 'var(--negative)';
+
   return (
     <div
-      className={`tx-row${editMode && !isValid ? ' tx-row--invalid' : ''}${isCleared ? ' tx-row--cleared' : ''}`}
+      className={`tx-item${editMode && !isValid ? ' tx-item--invalid' : ''}`}
       draggable={editMode && abs > 0.005}
       onDragStart={e => {
         e.dataTransfer.setData('application/json', JSON.stringify({ type: item._type, idx: item._idx }));
@@ -110,13 +116,63 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
         }
       }}
     >
-      <div className="tx-row-top">
+      <div className="tx-item-main">
         {editMode && (
-          <button className="tx-delete-btn" onClick={() => setConfirmDelete(c => !c)}><X size={14} /></button>
+          <button className="tx-item-delete" onClick={() => setConfirmDelete(c => !c)} aria-label="Vymazať transakciu"><X size={16} /></button>
         )}
-        <span className="tx-store">{item.transaction.store}</span>
+        <div className="tx-item-info">
+          <div className="tx-item-name">{item.transaction.store}</div>
+          <div className="tx-item-meta">
+            {showDate && <span>{item.transaction.date}</span>}
+            {isCredit
+              ? <span>Príjem</span>
+              : catParts.map(c => (
+                <span key={c.key} className="tx-item-cat" style={{ color: c.color }}>
+                  <span className="cat-swatch" style={{ background: c.color }} />
+                  {c.label}{catParts.length > 1 ? ` ${formatPercent(c.pct)} %` : ''}
+                </span>
+              ))}
+            <span className="tx-subcategory-menu">
+              <button
+                className={`tx-item-sub${assignedSubcategory ? '' : ' tx-item-sub--empty'}`}
+                onClick={() => setShowSubcategoryMenu(open => !open)}
+                disabled={subcategories.length === 0}
+                title={subcategories.length === 0 ? 'Najprv pridaj podkategóriu v Nastaveniach' : assignedSubcategory ? 'Zmeniť podkategóriu' : 'Priradiť podkategóriu'}
+              >
+                {assignedSubcategory ? assignedSubcategory.name : '+ Podkategória'}
+              </button>
+              {showSubcategoryMenu && subcategories.length > 0 && (
+                <span className="tx-subcategory-dropdown">
+                  {subcategories.map(category => (
+                    <button
+                      key={category.id}
+                      className="tx-subcategory-option"
+                      onClick={() => {
+                        onAssignSubcategory(item._type, item._idx, category);
+                        setShowSubcategoryMenu(false);
+                      }}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                  {assignedSubcategory && (
+                    <button
+                      className="tx-subcategory-option tx-subcategory-option--remove"
+                      onClick={() => {
+                        onAssignSubcategory(item._type, item._idx, null);
+                        setShowSubcategoryMenu(false);
+                      }}
+                    >
+                      Zrušiť priradenie
+                    </button>
+                  )}
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
         {editMode && editingAmount ? (
-          <span className="amount-editing" style={{ color: isCredit ? '#2FBF7F' : '#F2645A' }}>
+          <span className="amount-editing" style={{ color: amountColor }}>
             <input
               className="amount-input"
               type="number" step="0.01"
@@ -136,11 +192,11 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           </span>
         ) : (
           <span
-            className={`tx-amount${editMode ? ' tx-amount--editable' : ''}`}
-            style={{ color: isCredit ? '#2FBF7F' : '#F2645A' }}
+            className={`tx-item-amount${editMode && !isCleared ? ' tx-amount--editable' : ''}`}
+            style={{ color: amountColor }}
             onClick={editMode && !isCleared ? () => { setAmountInput(abs.toFixed(2)); setEditingAmount(true); } : undefined}
           >
-            {(isCredit ? abs : -abs).toFixed(2)} €
+            {formatMoney(isCredit ? abs : -abs, { sign: isCredit })}
           </span>
         )}
       </div>
@@ -153,120 +209,41 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
         </div>
       )}
 
-      {!confirmDelete && (
-        <div className="tx-row-bottom">
-          <span className="tx-date">{item.transaction.date}</span>
-          {isCredit ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <span className="summary-tag" style={{ '--tag-color': CAT_MAP['prijem'].color, whiteSpace: 'nowrap' }}>
-                {abs.toFixed(2)} €
-              </span>
-              {txWithdrawals.length > 0 && txWithdrawals.map((w) => (
-                <span
-                  key={w.withdrawalId}
-                  className="tx-withdraw-tag tx-withdraw-tag--clickable"
-                  onClick={() => setShowWithdrawModal(true)}
-                >
-                  ↩ {w.goalName} · {w.amount.toFixed(2)} €
-                </span>
-              ))}
-            </div>
-          ) : editMode ? (
-            <div className="tx-bubbles-area">
-              {bubbleCats.map(c => (
-                <EditableBubble key={c.key} value={amounts[c.key]} color={c.color}
-                  onChange={val => onUpdateAmounts(item._idx, { ...amounts, [c.key]: val }, abs)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="tx-tags">
-              {bubbleCats.filter(c => amounts[c.key] > 0.005).map(c => (
-                <span key={c.key} className="summary-tag" style={{ '--tag-color': c.color, whiteSpace: 'nowrap' }}>
-                  {amounts[c.key].toFixed(2)} €
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!confirmDelete && (
-        <div className="tx-subcategory-row">
-          <div className="tx-subcategory-menu">
-            <button
-              className={assignedSubcategory ? 'tx-subcategory-tag tx-subcategory-select' : 'tx-subcategory-btn'}
-              onClick={() => setShowSubcategoryMenu(open => !open)}
-              disabled={subcategories.length === 0}
-              title={subcategories.length === 0 ? 'Najprv pridaj podkategóriu v Nastaveniach' : assignedSubcategory ? 'Zmeniť podkategóriu' : 'Priradiť podkategóriu'}
-            >
-              {assignedSubcategory ? assignedSubcategory.name : '+ Podkategória'}
-            </button>
-            {showSubcategoryMenu && subcategories.length > 0 && (
-              <div className="tx-subcategory-dropdown">
-                {subcategories.map(category => (
-                  <button
-                    key={category.id}
-                    className="tx-subcategory-option"
-                    onClick={() => {
-                      onAssignSubcategory(item._type, item._idx, category);
-                      setShowSubcategoryMenu(false);
-                    }}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-                {assignedSubcategory && (
-                  <button
-                    className="tx-subcategory-option tx-subcategory-option--remove"
-                    onClick={() => {
-                      onAssignSubcategory(item._type, item._idx, null);
-                      setShowSubcategoryMenu(false);
-                    }}
-                  >
-                    Zrušiť priradenie
-                  </button>
-                )}
-              </div>
-            )}
-
-            {isCleared && !confirmDelete && (
-              <div className="tx-clearing-row">
-                <div className="tx-clearing-list">
-                  {clearings.map(clearing => (
-                    <span className="tx-clearing-label" key={clearing.id}>
-                      − {clearing.with || 'Vyrovnané'} · {clearing.amount.toFixed(2)} €
-                      <button className="tx-clearing-undo" onClick={() => onUndoClear(clearing.id)}>Vrátiť</button>
-                    </span>
-                  ))}
-                  <span className="tx-clearing-total">zostáva {abs.toFixed(2)} € z {originalAbs.toFixed(2)} €</span>
-                </div>
-              </div>
-            )}
-          </div>
+      {editMode && !isCredit && !confirmDelete && (
+        <div className="tx-item-extra tx-bubbles-area">
+          {bubbleCats.map(c => (
+            <EditableBubble key={c.key} value={amounts[c.key]} color={c.color}
+              onChange={val => onUpdateAmounts(item._idx, { ...amounts, [c.key]: val }, abs)}
+            />
+          ))}
         </div>
       )}
 
       {editMode && !isValid && !confirmDelete && (
-        <p className="tx-validation-warn"><TriangleAlert size={12} className="inline-icon" />Súčet: {sum.toFixed(2)} € / {abs.toFixed(2)} €</p>
+        <p className="tx-validation-warn"><TriangleAlert size={12} className="inline-icon" />Súčet {formatNumber(sum)} z {formatMoney(abs)}</p>
+      )}
+
+      {isCleared && !confirmDelete && (
+        <div className="tx-item-extra">
+          {clearings.map(clearing => (
+            <span className="tx-item-note" key={clearing.id}>
+              Vyrovnané s {clearing.with || 'inou platbou'}, {formatMoney(clearing.amount)}
+              <button className="text-btn" onClick={() => onUndoClear(clearing.id)}>Vrátiť</button>
+            </span>
+          ))}
+          <span className="tx-item-note">Zostáva {formatMoney(abs)} z {formatMoney(originalAbs)}</span>
+        </div>
       )}
 
       {showGoalBtn && !confirmDelete && (
-        <div className="tx-goal-row">
-          {txAllocations.length > 0 ? (
-            <div className="tx-alloc-list">
-              {txAllocations.map((a, i) => (
-                <span key={i} className="tx-alloc-tag">{a.goalName} · {a.amount.toFixed(2)} €</span>
-              ))}
-              {canAllocateMore && (
-                <button className="goal-alloc-btn" onClick={() => setShowGoalModal(true)} title="Pridať ďalší cieľ">+</button>
-              )}
-            </div>
-          ) : (
-            <>
-              <button className="goal-alloc-btn" onClick={() => setShowGoalModal(true)}>+</button>
-              <span className="tx-goal-label">Priradiť k cieľu sporenia</span>
-            </>
+        <div className="tx-item-extra">
+          {txAllocations.map((a, i) => (
+            <span key={i} className="tx-item-note"><Target size={13} className="inline-icon" />{a.goalName} {formatMoney(a.amount)}</span>
+          ))}
+          {(txAllocations.length === 0 || canAllocateMore) && (
+            <button className="tx-item-action" onClick={() => setShowGoalModal(true)}>
+              <Target size={13} />{txAllocations.length === 0 ? 'Priradiť k cieľu sporenia' : 'Priradiť zvyšok'}
+            </button>
           )}
         </div>
       )}
@@ -283,17 +260,13 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
       )}
 
       {showWithdrawBtn && !confirmDelete && (
-        <div className="tx-goal-row">
-          {txWithdrawals.length > 0 ? (
-            <div className="tx-alloc-list">
-              <button className="withdraw-alloc-btn" onClick={() => setShowWithdrawModal(true)}>↩</button>
-            </div>
-          ) : (
-            <>
-              <button className="withdraw-alloc-btn" onClick={() => setShowWithdrawModal(true)}>↩</button>
-              <span className="tx-goal-label">Výber zo sporenia</span>
-            </>
-          )}
+        <div className="tx-item-extra">
+          {txWithdrawals.map(w => (
+            <span key={w.withdrawalId} className="tx-item-note"><Undo2 size={13} className="inline-icon" />Výber z cieľa {w.goalName} {formatMoney(w.amount)}</span>
+          ))}
+          <button className="tx-item-action" onClick={() => setShowWithdrawModal(true)}>
+            <Undo2 size={13} />{txWithdrawals.length > 0 ? 'Upraviť výber zo sporenia' : 'Výber zo sporenia'}
+          </button>
         </div>
       )}
 

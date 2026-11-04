@@ -1,16 +1,34 @@
 import TransactionRow from './TransactionRow';
 import { getRemainingAmount } from '../utils/finance';
+import { formatDayLabel, formatMoney } from '../utils/format';
 
 function ClearingSummary({ clearing, onUndoClear }) {
   return (
-    <div className="tx-clearing-summary">
-      <div>
-        <strong>− {clearing.names.join(' + ')}</strong>
-        <span>Úplne vyrovnané · {clearing.amount.toFixed(2)} €</span>
+    <div className="tx-item tx-item--cleared">
+      <div className="tx-item-main">
+        <div className="tx-item-info">
+          <div className="tx-item-name">{clearing.names.join(' + ')}</div>
+          <div className="tx-item-meta">Úplne vyrovnané, {formatMoney(clearing.amount)}</div>
+        </div>
+        <button className="text-btn" onClick={() => onUndoClear(clearing.id)}>Vrátiť</button>
       </div>
-      <button className="tx-clearing-undo" onClick={() => onUndoClear(clearing.id)}>Vrátiť</button>
     </div>
   );
+}
+
+// Rozdelí zoradené transakcie do skupín podľa dňa. Ručne pridané majú vlastnú skupinu navrchu.
+function groupByDay(items, isManual) {
+  const groups = [];
+  items.forEach(item => {
+    const key = isManual(item) ? '__manual' : item.transaction.date || '';
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.key === key) lastGroup.items.push(item);
+    else groups.push({ key, label: key === '__manual' ? 'Pridané ručne' : formatDayLabel(key), items: [item] });
+  });
+  return groups.map(group => ({
+    ...group,
+    total: group.items.reduce((sum, item) => sum + (item._type === 'credit' ? 1 : -1) * getRemainingAmount(item), 0),
+  }));
 }
 
 export default function TransactionTable({ history, creditHistory, editMode, savingsGoals, customCategories, subcategoryFilter, onUpdateAmounts, onUpdateAmount, onDelete, onAllocateToGoal, onAddGoal, onWithdrawalsChanged, onAssignSubcategory, onClearPair, onUndoClear }) {
@@ -63,17 +81,36 @@ export default function TransactionTable({ history, creditHistory, editMode, sav
     return `${base}|${count}`;
   };
 
+  const groups = groupByDay(all, isManual);
+
   return (
     <div className="tx-list">
-      {completedClearings.map(clearing => (
-        <ClearingSummary key={clearing.id} clearing={clearing} onUndoClear={onUndoClear} />
+      {completedClearings.length > 0 && (
+        <div className="tx-day">
+          <div className="tx-day-head"><span>Vyrovnané platby</span></div>
+          {completedClearings.map(clearing => (
+            <ClearingSummary key={clearing.id} clearing={clearing} onUndoClear={onUndoClear} />
+          ))}
+        </div>
+      )}
+      {groups.map((group, i) => (
+        <div key={`${group.key}-${i}`} className="tx-day">
+          <div className="tx-day-head">
+            <span>{group.label}</span>
+            <span>{formatMoney(group.total, { sign: true })}</span>
+          </div>
+          {group.items.map(item => (
+            <TransactionRow key={rowKey(item)} item={item} editMode={editMode} savingsGoals={savingsGoals} customCategories={customCategories}
+              showDate={group.key === '__manual'}
+              onUpdateAmounts={onUpdateAmounts} onUpdateAmount={onUpdateAmount}
+              onDelete={onDelete} onAllocateToGoal={onAllocateToGoal} onAddGoal={onAddGoal} onWithdrawalsChanged={onWithdrawalsChanged}
+              onAssignSubcategory={onAssignSubcategory} onClearPair={onClearPair} onUndoClear={onUndoClear} />
+          ))}
+        </div>
       ))}
-      {all.map(item => (
-        <TransactionRow key={rowKey(item)} item={item} editMode={editMode} savingsGoals={savingsGoals} customCategories={customCategories}
-          onUpdateAmounts={onUpdateAmounts} onUpdateAmount={onUpdateAmount}
-          onDelete={onDelete} onAllocateToGoal={onAllocateToGoal} onAddGoal={onAddGoal} onWithdrawalsChanged={onWithdrawalsChanged}
-          onAssignSubcategory={onAssignSubcategory} onClearPair={onClearPair} onUndoClear={onUndoClear} />
-      ))}
+      {groups.length === 0 && completedClearings.length === 0 && (
+        <p className="section-empty">Žiadne transakcie na zobrazenie.</p>
+      )}
     </div>
   );
 }

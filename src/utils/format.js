@@ -31,3 +31,14 @@ export function formatCompact(value) {
   if (Math.abs(value) >= 1000) return `${compact.format(value / 1000)} tis.`;
   return compact.format(Math.round(value));
 }
+
+const WEEKDAYS = ['Nedeľa', 'Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'];
+const MONTHS_GENITIVE = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna', 'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra'];
+
+// "31.10.2026" -> "Piatok 31. októbra". Neznámy formát vráti bez zmeny.
+export function formatDayLabel(dateStr) {
+  const [d, m, y] = String(dateStr || '').split('.').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (!d || !m || !y || Number.isNaN(date.getTime())) return dateStr || 'Bez dátumu';
+  return `${WEEKDAYS[date.getDay()]} ${d}. ${MONTHS_GENITIVE[m - 1]}`;
+}

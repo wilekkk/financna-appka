@@ -1,12 +1,15 @@
-import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, SlidersHorizontal, FileUp, RotateCcw, Plus } from 'lucide-react';
 import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
-import { getRemainingAmount } from '../utils/finance';
+import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
+import { CAT_MAP } from '../constants';
+import { formatMoney } from '../utils/format';
+import Money from './Money';
 import AddTransactionModal from './AddTransactionModal';
 
 export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack }) {
-  const [tab, setTab]                         = useState(selectedSubcategory ? 'table' : 'dashboard');
+  const [tab, setTab]                         = useState('table');
   const [editMode, setEditMode]               = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -132,29 +135,72 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
     }
   };
 
+  const { totalIncome, totalExpenses, catTotals } = calcMonthTotals(history, creditHistory);
+  const net = totalIncome - totalExpenses;
+  const categories = ['needs', 'wants', 'savings'].map(key => ({ key, ...CAT_MAP[key], value: catTotals[key] }));
+  const year = month.key.slice(0, 4);
+
   return (
-    <div className="screen">
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-        <span className="nav-title">{month.label}</span>
-        <button className="reset-month-btn" onClick={() => setShowResetConfirm(true)}>↺ Reset</button>
-      </div>
-      <div className="tabs">
-        <button className={`tab-btn${tab === 'dashboard' ? ' tab-btn--active' : ''}`} onClick={() => setTab('dashboard')}>Dashboard</button>
-        <button className={`tab-btn${tab === 'table' ? ' tab-btn--active' : ''}`} onClick={() => setTab('table')}>Transakcie</button>
-      </div>
-      {tab === 'table' && (
-        <div className="results-action-bar">
-          <button
-            className={`edit-mode-btn${editMode ? ' edit-mode-btn--active' : ''}`}
-            onClick={() => editMode ? setEditMode(false) : setShowEditConfirm(true)}
-          >
-            <SlidersHorizontal size={14} /> Upraviť
-          </button>
-          {editMode && <span className="clearing-hint">Potiahni príjem na výdavok (alebo opačne) a vyrovnaj ich</span>}
-          <button className="add-more-btn" onClick={onAddMore}>+ Nahrať výpis</button>
-          <button className="add-transaction-btn" onClick={() => setShowAddTransaction(true)}>+ Pridať transakciu</button>
+    <div className="yearly-screen detail-screen">
+      <header className="detail-header">
+        <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť na mesiace"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+        <h1 className="screen-title">{month.label} {year}</h1>
+        <div className="detail-header-actions">
+          <button className="icon-btn" onClick={onAddMore} aria-label="Nahrať ďalší výpis" title="Nahrať ďalší výpis"><FileUp size={20} strokeWidth={1.75} /></button>
+          <button className="icon-btn" onClick={() => setShowResetConfirm(true)} aria-label="Resetovať mesiac" title="Resetovať mesiac"><RotateCcw size={20} strokeWidth={1.75} /></button>
         </div>
+      </header>
+
+      <section className="hero">
+        <div className="hero-label">Zostatok mesiaca</div>
+        <div className={`hero-value hero-value--m${net < -0.004 ? ' is-negative' : ''}`}><Money value={net} sign /></div>
+      </section>
+
+      <section className="split-figures">
+        <div>
+          <div className="figure-label">Príjmy</div>
+          <div className="figure-value is-positive">{formatMoney(totalIncome, { sign: true })}</div>
+        </div>
+        <div>
+          <div className="figure-label">Výdavky</div>
+          <div className="figure-value is-negative">{formatMoney(-totalExpenses)}</div>
+        </div>
+      </section>
+
+      {totalExpenses > 0 && (
+        <section className="month-cats">
+          <div className="cat-bar cat-bar--thin" aria-hidden="true">
+            {categories.filter(c => c.value > 0).map(c => (
+              <span key={c.key} style={{ flexGrow: c.value, background: c.color }} />
+            ))}
+          </div>
+          <div className="month-cats-legend">
+            {categories.map(c => (
+              <span key={c.key} style={{ color: c.color }}>
+                <span className="cat-swatch" style={{ background: c.color }} />{c.label} {formatMoney(c.value)}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="tabs month-tabs">
+        <button className={`tab-btn${tab === 'table' ? ' tab-btn--active' : ''}`} onClick={() => setTab('table')}>Transakcie</button>
+        <button className={`tab-btn${tab === 'dashboard' ? ' tab-btn--active' : ''}`} onClick={() => setTab('dashboard')}>Podkategórie</button>
+        {tab === 'table' && (
+          <div className="month-tabs-actions">
+            <button
+              className={`text-btn text-btn--icon${editMode ? ' is-active' : ''}`}
+              onClick={() => editMode ? setEditMode(false) : setShowEditConfirm(true)}
+            >
+              <SlidersHorizontal size={15} />{editMode ? 'Hotovo' : 'Upraviť'}
+            </button>
+            <button className="text-btn text-btn--icon" onClick={() => setShowAddTransaction(true)}><Plus size={16} />Pridať</button>
+          </div>
+        )}
+      </div>
+      {tab === 'table' && editMode && (
+        <p className="clearing-hint">Ťuknutím na sumu ju zmeníš. Potiahnutím príjmu na výdavok (alebo opačne) ich vyrovnáš.</p>
       )}
 
       {showEditConfirm && (
@@ -174,12 +220,12 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
       {showResetConfirm && (
         <div className="confirm-overlay" onClick={() => setShowResetConfirm(false)}>
           <div className="confirm-modal" onClick={e => e.stopPropagation()}>
-            <div className="confirm-modal-icon">↺</div>
+            <div className="confirm-modal-icon"><RotateCcw size={28} strokeWidth={1.5} /></div>
             <h3 className="confirm-modal-title">Resetovať mesiac?</h3>
             <p className="confirm-modal-text">Vymažú sa všetky transakcie za {month.label}. Budete môcť nahrať výpis znovu.</p>
             <div className="confirm-modal-actions">
               <button className="confirm-modal-cancel" onClick={() => setShowResetConfirm(false)}>Zrušiť</button>
-              <button className="confirm-modal-ok" style={{ background: '#F2645A' }} onClick={() => { setShowResetConfirm(false); onReset(); }}>Vymazať</button>
+              <button className="confirm-modal-ok" style={{ background: 'var(--negative)' }} onClick={() => { setShowResetConfirm(false); onReset(); }}>Vymazať</button>
             </div>
           </div>
         </div>

@@ -1,17 +1,13 @@
-import { CATS } from '../constants';
-import { calcMonthTotals, calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
-import PieChart from './PieChart';
+import { calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
+import { formatMoney } from '../utils/format';
 
+// Záložka "Podkategórie": súčty podkategórií za mesiac. Kliknutím sa vyfiltrujú transakcie.
 export default function DashboardTab({ history, creditHistory, customCategories, onSelectSubcategory }) {
-  const { totalIncome, totalExpenses, catTotals } = calcMonthTotals(history, creditHistory);
-  const slices = CATS.filter(c => c.key !== 'prijem').map(c => ({ ...c, value: catTotals[c.key] }));
   const subcategoryTotals = calcSubcategoryTotals([...creditHistory, ...history], customCategories);
-  const incomeTransactions = creditHistory.map(item => ({ ...item, type: 'income' }));
-  const expenseTransactions = history.map(item => ({ ...item, type: 'expense' }));
-  const unassignedIncome = incomeTransactions
+  const unassignedIncome = creditHistory
     .filter(item => !item.subcategory)
     .reduce((sum, item) => sum + getRemainingAmount(item), 0);
-  const unassignedExpense = expenseTransactions
+  const unassignedExpense = history
     .filter(item => !item.subcategory)
     .reduce((sum, item) => sum + getRemainingAmount(item), 0);
   const incomeSubcategories = [
@@ -23,49 +19,22 @@ export default function DashboardTab({ history, creditHistory, customCategories,
     { id: '__unassigned-expense', name: 'Nezaradené', type: 'expense', total: unassignedExpense, unassigned: true },
   ];
 
+  const row = (category, isIncome) => (
+    <button key={category.id} className={`list-row list-row--btn${category.unassigned ? ' list-row--muted' : ''}`}
+            onClick={() => onSelectSubcategory(category)}>
+      <span>{category.name}</span>
+      <span className={isIncome ? 'is-positive' : 'is-negative'}>
+        {formatMoney(isIncome ? category.total : -category.total, { sign: isIncome })}
+      </span>
+    </button>
+  );
+
   return (
-    <div className="dashboard-tab">
-      {totalExpenses > 0
-        ? <PieChart slices={slices} total={totalExpenses} />
-        : <p className="no-chart-data">Žiadne výdavky na zobrazenie</p>
-      }
-
-      <div className="stats-grid">
-        <div className="stat-card stat-card--income">
-          <span className="stat-label">Príjmy</span>
-          <span className="stat-value">+{totalIncome.toFixed(2)} €</span>
-        </div>
-        <div className="stat-card stat-card--expense">
-          <span className="stat-label">Výdavky</span>
-          <span className="stat-value">-{totalExpenses.toFixed(2)} €</span>
-        </div>
-        <div className={`stat-card stat-card--balance stat-card--net${(totalIncome - totalExpenses) >= 0 ? ' positive' : ' negative'}`}>
-          <span className="stat-label">{(totalIncome - totalExpenses) >= 0 ? 'Zarobil si' : 'Minul si'}</span>
-          <span className="stat-value">{Math.abs(totalIncome - totalExpenses).toFixed(2)} €</span>
-        </div>
-      </div>
-
-      <div className="subcategory-summary">
-        <h3 className="subcategory-summary-title">Podkategórie</h3>
-        <section>
-          <h4 className="subcategory-summary-heading">Príjmy</h4>
-          {incomeSubcategories.map(category => (
-            <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--income${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
-              <span>{category.name}</span>
-              <strong>+{category.total.toFixed(2)} €</strong>
-            </button>
-          ))}
-        </section>
-        <section>
-          <h4 className="subcategory-summary-heading">Výdavky</h4>
-          {expenseSubcategories.map(category => (
-            <button key={category.id} className={`subcategory-summary-row subcategory-summary-row--expense${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`} onClick={() => onSelectSubcategory(category)}>
-              <span>{category.name}</span>
-              <strong>-{category.total.toFixed(2)} €</strong>
-            </button>
-          ))}
-        </section>
-      </div>
+    <div className="month-subcategories">
+      <h3 className="subsection-title">Príjmy</h3>
+      {incomeSubcategories.map(category => row(category, true))}
+      <h3 className="subsection-title">Výdavky</h3>
+      {expenseSubcategories.map(category => row(category, false))}
     </div>
   );
 }
