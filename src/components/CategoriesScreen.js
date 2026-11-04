@@ -1,4 +1,4 @@
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CategoriesScreen({ customCategories, onAddCategory, onDeleteCategory, onBack }) {
@@ -17,48 +17,47 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
   };
 
   return (
-    <div className="yearly-screen">
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-        <h1 className="nav-title">Podkategórie príjmov/výdavkov</h1>
-      </div>
+    <div className="yearly-screen detail-screen">
+      <header className="detail-header">
+        <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť na nastavenia"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+        <h1 className="screen-title">Podkategórie</h1>
+        <div className="detail-header-actions">
+          <button className="icon-btn" onClick={() => { setType(null); setDialogOpen(true); }} aria-label="Pridať podkategóriu" title="Pridať podkategóriu"><Plus size={22} strokeWidth={1.75} /></button>
+        </div>
+      </header>
 
-      <button className="primary-action-btn" onClick={() => { setType(null); setDialogOpen(true); }}>
-        + Pridať kategóriu
-      </button>
+      <p className="screen-intro">Podkategórie priradíš transakciám v mesiaci. Vymazaná podkategória ostane pri transakciách, ktoré ju už majú.</p>
 
-      <div className="category-groups">
-        <section className="category-group">
-          <h2 className="category-group-title">Príjmové kategórie</h2>
+        <section className="section">
+          <div className="section-head"><h2 className="section-title">Príjmy</h2></div>
           {customCategories.filter(category => category.type === 'income').map(category => (
-            <div className="category-row" key={category.id}>
+            <div className="list-row" key={category.id}>
               <span>{category.name}</span>
-              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><X size={16} /></button>
+              <button className="icon-btn icon-btn--sm icon-btn--danger" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><Trash2 size={16} strokeWidth={1.75} /></button>
             </div>
           ))}
           {!customCategories.some(category => category.type === 'income') && (
-            <div className="category-empty">Zatiaľ nemáš žiadnu podkategóriu.</div>
+            <p className="section-empty">Zatiaľ nemáš žiadnu podkategóriu.</p>
           )}
         </section>
-        <section className="category-group">
-          <h2 className="category-group-title">Výdavkové kategórie</h2>
+        <section className="section">
+          <div className="section-head"><h2 className="section-title">Výdavky</h2></div>
           {customCategories.filter(category => category.type === 'expense').map(category => (
-            <div className="category-row" key={category.id}>
+            <div className="list-row" key={category.id}>
               <span>{category.name}</span>
-              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><X size={16} /></button>
+              <button className="icon-btn icon-btn--sm icon-btn--danger" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><Trash2 size={16} strokeWidth={1.75} /></button>
             </div>
           ))}
           {!customCategories.some(category => category.type === 'expense') && (
-            <div className="category-empty">Zatiaľ nemáš žiadnu podkategóriu.</div>
+            <p className="section-empty">Zatiaľ nemáš žiadnu podkategóriu.</p>
           )}
         </section>
-      </div>
 
       {dialogOpen && (
         <div className="modal-backdrop" role="presentation">
           <form className="category-dialog" onSubmit={handleSubmit}>
-            <h2>Pridať kategóriu</h2>
-            <p className="dialog-label">Aký typ kategórie chceš pridať?</p>
+            <h2>Pridať podkategóriu</h2>
+            <p className="dialog-label">Typ</p>
             <div className="category-type-options">
               <button
                 type="button"
@@ -77,10 +76,10 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
             </div>
             {type && (
               <>
-                <label className="dialog-label" htmlFor="category-name">Názov kategórie</label>
+                <label className="dialog-label" htmlFor="category-name">Názov</label>
                 <input
                   id="category-name"
-                  className="auth-input"
+                  className="dialog-input"
                   value={name}
                   onChange={event => setName(event.target.value)}
                   placeholder="napr. Bývanie"

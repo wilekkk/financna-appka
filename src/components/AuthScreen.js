@@ -36,7 +36,10 @@ export default function AuthScreen() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <h1 className="auth-title">Finančná appka</h1>
+        <div>
+          <h1 className="auth-title">Finančná appka</h1>
+          <p className="auth-tagline">Príjmy, výdavky a sporenie na jednom mieste.</p>
+        </div>
         <div className="auth-tabs">
           <button className={`auth-tab${mode === 'login' ? ' auth-tab--active' : ''}`} onClick={() => { setMode('login'); setError(''); setInfo(''); }}>Prihlásiť sa</button>
           <button className={`auth-tab${mode === 'register' ? ' auth-tab--active' : ''}`} onClick={() => { setMode('register'); setError(''); setInfo(''); }}>Registrácia</button>
@@ -45,16 +48,18 @@ export default function AuthScreen() {
         <form className="auth-form" onSubmit={handleSubmit}>
           {mode === 'register' && (
             <>
-              <label className="auth-label">Meno (voliteľné)</label>
+              <label className="auth-label" htmlFor="auth-first-name">Meno (voliteľné)</label>
               <input
+                id="auth-first-name"
                 className="auth-input"
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
                 autoComplete="given-name"
               />
 
-              <label className="auth-label">Priezvisko (voliteľné)</label>
+              <label className="auth-label" htmlFor="auth-last-name">Priezvisko (voliteľné)</label>
               <input
+                id="auth-last-name"
                 className="auth-input"
                 value={lastName}
                 onChange={e => setLastName(e.target.value)}
@@ -63,8 +68,9 @@ export default function AuthScreen() {
             </>
           )}
 
-          <label className="auth-label">Email</label>
+          <label className="auth-label" htmlFor="auth-email">Email</label>
           <input
+            id="auth-email"
             className="auth-input"
             type="email"
             placeholder="tvoj@email.sk"
@@ -74,8 +80,9 @@ export default function AuthScreen() {
             autoComplete="email"
           />
 
-          <label className="auth-label">Heslo</label>
+          <label className="auth-label" htmlFor="auth-password">Heslo</label>
           <input
+            id="auth-password"
             className="auth-input"
             type="password"
             placeholder="Minimálne 6 znakov"
@@ -89,7 +96,7 @@ export default function AuthScreen() {
           {info  && <div className="auth-info">{info}</div>}
 
           <button className="auth-submit" type="submit" disabled={loading}>
-            {loading ? 'Načítava...' : mode === 'login' ? 'Prihlásiť sa' : 'Zaregistrovať sa'}
+            {loading ? 'Načítava…' : mode === 'login' ? 'Prihlásiť sa' : 'Zaregistrovať sa'}
           </button>
         </form>
       </div>

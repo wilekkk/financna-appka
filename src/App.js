@@ -168,7 +168,7 @@ function App() {
   }
 
   if (screen === 'profile') {
-    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} />);
+    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => supabase.auth.signOut()} />);
   }
 
   if (screen === 'categories') {

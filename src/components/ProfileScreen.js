@@ -1,8 +1,8 @@
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function ProfileScreen({ user, onBack }) {
+export default function ProfileScreen({ user, onBack, onLogout }) {
   const [firstName, setFirstName] = useState(user.user_metadata?.first_name ?? '');
   const [lastName, setLastName]   = useState(user.user_metadata?.last_name ?? '');
   const [saving, setSaving]       = useState(false);
@@ -23,13 +23,14 @@ export default function ProfileScreen({ user, onBack }) {
   };
 
   return (
-    <div className="yearly-screen">
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-        <h1 className="nav-title">Profil</h1>
-      </div>
+    <div className="yearly-screen detail-screen">
+      <header className="detail-header">
+        <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť na nastavenia"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+        <h1 className="screen-title">Profil</h1>
+        <span />
+      </header>
 
-      <div className="auth-card">
+      <div className="auth-card profile-form">
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="auth-label" htmlFor="profile-first-name">Meno</label>
           <input
@@ -56,10 +57,14 @@ export default function ProfileScreen({ user, onBack }) {
           {info  && <div className="auth-info">{info}</div>}
 
           <button className="auth-submit" type="submit" disabled={saving}>
-            {saving ? 'Ukladá sa...' : 'Uložiť'}
+            {saving ? 'Ukladá sa…' : 'Uložiť'}
           </button>
         </form>
       </div>
+
+      <section className="section">
+        <button className="logout-row" onClick={onLogout}><LogOut size={18} strokeWidth={1.75} />Odhlásiť sa</button>
+      </section>
     </div>
   );
 }

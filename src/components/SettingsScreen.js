@@ -12,7 +12,7 @@ export default function SettingsScreen({ onOpenProfile, onOpenCategories }) {
           <span className="settings-list-arrow"><ChevronRight size={18} /></span>
         </button>
         <button className="settings-list-item" onClick={onOpenCategories}>
-          <span>Podkategórie príjmov/výdavkov</span>
+          <span>Podkategórie príjmov a výdavkov</span>
           <span className="settings-list-arrow"><ChevronRight size={18} /></span>
         </button>
       </div>
