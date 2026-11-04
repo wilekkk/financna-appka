@@ -1,3 +1,4 @@
+import { CAT_MAP } from '../constants';
 import { useState } from 'react';
 
 // Accepts d.m.yyyy or dd.mm.yyyy and returns dd.mm.yyyy, or null for an invalid date.
@@ -72,7 +73,7 @@ export default function AddTransactionModal({ onConfirm, onCancel }) {
             <span className="dialog-label">Kategória</span>
             <div className="add-transaction-categories">
               {['needs', 'wants', 'savings'].map(value => (
-                <label key={value} className={`add-transaction-category${category === value ? ' add-transaction-category--active' : ''}`}>
+                <label key={value} className={`add-transaction-category${category === value ? ' add-transaction-category--active' : ''}`} style={{ '--c': CAT_MAP[value].color }}>
                   <input type="radio" name="manual-category" value={value} checked={category === value} onChange={() => setCategory(value)} />
                   {value === 'needs' ? 'Needs' : value === 'wants' ? 'Wants' : 'Savings'}
                 </label>

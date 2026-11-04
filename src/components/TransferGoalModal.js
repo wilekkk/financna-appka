@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatMoney } from '../utils/format';
 
 export default function TransferGoalModal({ fromGoal, available, goals, onConfirm, onCancel }) {
   const targets = goals.filter(g => g.id !== fromGoal.id);
@@ -18,7 +19,8 @@ export default function TransferGoalModal({ fromGoal, available, goals, onConfir
       <div className="confirm-modal">
         <h3 className="confirm-modal-title">Presunúť z „{fromGoal.name}“</h3>
         <div className="goal-form">
-          <select className="goal-input" value={toId} onChange={e => setToId(e.target.value)}>
+          <label className="dialog-label" htmlFor="transfer-to">Do cieľa</label>
+          <select id="transfer-to" className="goal-input" value={toId} onChange={e => setToId(e.target.value)}>
             {targets.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
           <div className="goal-amount-row">
@@ -27,7 +29,7 @@ export default function TransferGoalModal({ fromGoal, available, goals, onConfir
               onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus />
             <span className="goal-eur">€</span>
           </div>
-          <span className="goal-withdrawn-label">max {available.toFixed(2)} €</span>
+          <span className="dialog-hint">Najviac {formatMoney(available)}</span>
         </div>
         <div className="confirm-modal-actions">
           <button className="confirm-modal-cancel" onClick={onCancel}>Zrušiť</button>

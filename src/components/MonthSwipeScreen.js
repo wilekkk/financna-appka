@@ -14,6 +14,7 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
   const [flash, setFlash]             = useState(null);
   const [showSplit, setShowSplit]     = useState(false);
   const historyRef = useRef([]);
+  const year = month.key.slice(0, 4);
 
   const handleLoad = (transactions) => {
     const existingDebitKeys  = new Set(existingHistory.map(h => txKey(h.transaction)));
@@ -53,16 +54,20 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
 
   if (subScreen === 'upload') {
     return (
-      <div className="screen">
-        <div className="nav-header">
-          <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-          <span className="nav-title">{month.label}</span>
-        </div>
-        {existingHistory.length > 0 && (
-          <div className="add-more-info">
-            Aktuálne {existingHistory.length + existingCreditHistory.length} transakcií — nahraj ďalší výpis a duplikáty sa preskočia.
-          </div>
-        )}
+      <div className="yearly-screen detail-screen">
+        <header className="detail-header">
+          <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+          <h1 className="screen-title">{month.label} {year}</h1>
+          <span />
+        </header>
+        <section className="hero">
+          <div className="hero-label">Nahratie výpisu</div>
+          <p className="upload-intro">
+            {existingHistory.length > 0
+              ? `Mesiac už má ${existingHistory.length + existingCreditHistory.length} transakcií. Nahraj ďalší výpis, duplikáty sa preskočia.`
+              : 'Po nahratí zatriedíš každý výdavok potiahnutím karty.'}
+          </p>
+        </section>
         <UploadZone onLoad={handleLoad} />
       </div>
     );
@@ -70,11 +75,17 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
 
   const transaction = debitList[index];
   return (
-    <div className={`screen${flash ? ` screen--flash-${flash}` : ''}`}>
-      <div className="nav-header">
-        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
-        <span className="nav-title">{month.label}</span>
+    <div className={`yearly-screen detail-screen swipe-screen${flash ? ` screen--flash-${flash}` : ''}`}>
+      <header className="detail-header">
+        <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+        <h1 className="screen-title">{month.label} {year}</h1>
+        <span className="swipe-counter">{index + 1} / {debitList.length}</span>
+      </header>
+      <div className="progress-bar swipe-progress">
+        <div className="progress-fill" style={{ width: `${(index / debitList.length) * 100}%` }} />
       </div>
+      <p className="swipe-help">Potiahni kartu smerom ku kategórii.</p>
+      <div className="swipe-stage">
       <div className="direction-hints">
         <div className="hint hint--wants"><ArrowLeft size={14} />Wants</div>
         <div className="hint hint--savings"><ArrowUp size={14} />Savings</div>
@@ -84,9 +95,6 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
         <SwipeCard key={transaction.id} transaction={transaction} onSwipe={handleSwipe} onSplitRequest={() => setShowSplit(true)} />
       </div>
       <div className="hint hint--split"><ArrowDown size={14} />Rozdeliť</div>
-      <p className="counter">{index + 1} / {debitList.length}</p>
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${(index / debitList.length) * 100}%` }} />
       </div>
       {showSplit && <SplitModal transaction={transaction} onConfirm={handleSplitConfirm} onCancel={() => setShowSplit(false)} />}
     </div>

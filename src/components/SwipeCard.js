@@ -1,4 +1,4 @@
-import { Store } from 'lucide-react';
+import { formatMoney } from '../utils/format';
 import { useState, useRef } from 'react';
 import { getDirection, getPreviewKey } from '../utils/swipe';
 import { CAT_MAP, SPLIT_INFO } from '../constants';
@@ -38,7 +38,7 @@ export default function SwipeCard({ transaction, onSwipe, onSplitRequest }) {
         transform: getTransform(),
         transition: exiting ? 'transform 0.38s ease-in' : (dragging.current ? 'none' : 'transform 0.22s ease-out'),
         borderColor: previewCat?.color,
-        boxShadow: previewCat ? `0 8px 40px ${previewCat.color}55` : undefined,
+        boxShadow: previewCat ? `0 12px 48px ${previewCat.color}40` : undefined,
       }}
       onMouseDown={e => handleStart(e.clientX, e.clientY)}
       onMouseMove={e => handleMove(e.clientX, e.clientY)}
@@ -52,9 +52,8 @@ export default function SwipeCard({ transaction, onSwipe, onSplitRequest }) {
           {previewKey === 'split' ? 'Rozdeliť' : previewCat.label}
         </div>
       )}
-      <div className="card-icon"><Store size={28} strokeWidth={1.5} /></div>
       <div className="card-store">{transaction.store}</div>
-      <div className="card-amount">{transaction.amount.toFixed(2)} €</div>
+      <div className="card-amount">{formatMoney(transaction.amount)}</div>
       <div className="card-date">{transaction.date}</div>
     </div>
   );

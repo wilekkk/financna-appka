@@ -1,4 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
+import { formatMoney } from '../utils/format';
 import { useState, useRef } from 'react';
 
 export default function SaveToGoalModal({ transaction, savingsAmount, goals: allGoals, onConfirm, onCancel, onAddGoal }) {
@@ -55,7 +56,7 @@ export default function SaveToGoalModal({ transaction, savingsAmount, goals: all
         <div className="split-handle" />
         <div className="split-tx-info">
           <span className="split-tx-store">{transaction.store}</span>
-          <span className="split-tx-amount" style={{ color: '#4C7DFF' }}>{savingsAmount.toFixed(2)} €</span>
+          <span className="split-tx-amount" style={{ color: 'var(--cat-savings)' }}>{formatMoney(savingsAmount)}</span>
         </div>
 
         <div className="stg-goals-list">
@@ -69,7 +70,7 @@ export default function SaveToGoalModal({ transaction, savingsAmount, goals: all
                   <input type="checkbox" checked={sel.selected} onChange={() => toggle(g.id)} />
                   <span className="stg-goal-name">{g.name}</span>
                   {g.targetAmount && (
-                    <span className="stg-goal-meta">{allocated.toFixed(0)} / {g.targetAmount.toFixed(0)} €</span>
+                    <span className="stg-goal-meta">{formatMoney(allocated)} z {formatMoney(g.targetAmount)}</span>
                   )}
                 </label>
                 {sel.selected && (
@@ -106,7 +107,7 @@ export default function SaveToGoalModal({ transaction, savingsAmount, goals: all
 
         {remaining < -0.005 && (
           <div className="split-remaining">
-            <TriangleAlert size={14} className="inline-icon" />Presah o <strong>{Math.abs(remaining).toFixed(2)} €</strong> nad dostupné sporenie
+            <TriangleAlert size={14} className="inline-icon" />Presah o <strong>{formatMoney(Math.abs(remaining))}</strong> nad dostupné sporenie
           </div>
         )}
 

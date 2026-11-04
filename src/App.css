@@ -2658,3 +2658,219 @@ body {
 }
 .goals-archived summary::-webkit-details-marker { display: none; }
 .goals-archived[open] .goals-archived-chevron { transform: rotate(180deg); }
+
+/* ── Okná ako spodné panely (redizajn) ───────────────────────────────────── */
+
+.modal-backdrop,
+.confirm-overlay,
+.split-overlay {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: var(--overlay);
+  backdrop-filter: none;
+}
+
+.category-dialog,
+.add-transaction-dialog,
+.confirm-modal,
+.split-sheet {
+  width: 100%;
+  max-width: 430px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--radius-m) var(--radius-m) 0 0;
+  background: var(--surface);
+  box-shadow: none;
+  align-items: stretch;
+  gap: 16px;
+  animation: slide-up 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Na širšej obrazovke (počítač) okno v strede */
+@media (min-width: 640px) {
+  .modal-backdrop,
+  .confirm-overlay,
+  .split-overlay { align-items: center; padding: 24px; }
+  .category-dialog,
+  .add-transaction-dialog,
+  .confirm-modal,
+  .split-sheet { border-bottom: 1px solid var(--line); border-radius: var(--radius-m); padding-bottom: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-dialog, .add-transaction-dialog, .confirm-modal, .split-sheet { animation: none; }
+}
+
+.split-handle { width: 36px; height: 4px; margin: -8px auto 0; border-radius: 2px; background: var(--line-strong); }
+
+.category-dialog h2,
+.add-transaction-dialog h2,
+.confirm-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+.add-transaction-dialog h2,
+.category-dialog h2 { margin-bottom: 16px; }
+.confirm-modal-text { text-align: left; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.confirm-modal-icon { color: var(--ink-3); line-height: 0; }
+
+/* Formulárové polia */
+.dialog-label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.dialog-hint { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.dialog-input,
+.goal-input,
+.auth-input,
+select.goal-input {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.dialog-input::placeholder,
+.goal-input::placeholder,
+.auth-input::placeholder { color: var(--ink-4); }
+.dialog-input:focus,
+.goal-input:focus,
+.auth-input:focus { border-color: var(--accent); outline: none; }
+.goal-input--error { border-color: var(--negative); }
+.goal-form { gap: 12px; }
+.goal-eur { font-size: 15px; font-weight: 400; color: var(--ink-3); }
+.add-transaction-error { margin: -6px 0 10px; color: var(--negative); font-size: 13px; }
+
+/* Výber z možností (typ, kategória) */
+.category-type-btn,
+.add-transaction-category {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 400;
+}
+.category-type-btn--active { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 500; }
+.add-transaction-category { position: relative; }
+.add-transaction-category--active { border-color: var(--c); background: transparent; color: var(--c); font-weight: 500; }
+.add-transaction-categories { gap: 8px; }
+
+/* Tlačidlá v okne */
+.dialog-actions,
+.confirm-modal-actions,
+.split-actions { display: flex; gap: 10px; margin-top: 8px; }
+.dialog-actions > button,
+.confirm-modal-actions > button,
+.split-actions > button {
+  flex: 1;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-s);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+}
+.primary-action-btn,
+.confirm-modal-ok,
+.split-confirm-btn { border: 0; background: var(--accent); color: #fff; }
+.primary-action-btn:hover,
+.confirm-modal-ok:hover,
+.split-confirm-btn:not(:disabled):hover { background: var(--accent-hover); }
+.confirm-modal-ok:disabled,
+.split-confirm-btn:disabled { opacity: 0.4; cursor: default; }
+.category-delete-confirm-btn { background: var(--negative); border-radius: var(--radius-s); height: 44px; }
+
+/* Rozdelenie a ciele v okne */
+.split-tx-info { padding-bottom: 14px; border-bottom: 1px solid var(--line); gap: 12px; }
+.split-tx-store { font-size: 17px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.split-tx-amount { font-size: 17px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.split-tx-info:not(:has(.split-tx-amount[style])) .split-tx-amount { color: var(--negative); }
+.split-row-label { font-size: 15px; font-weight: 400; color: var(--ink); }
+.split-btn { width: 36px; height: 36px; border: 1px solid var(--line-strong); border-radius: var(--radius-s); background: transparent; color: var(--ink); font-weight: 400; }
+.split-btn:not(:disabled):active { background: var(--line); }
+.split-pct { font-weight: 500; font-variant-numeric: tabular-nums; min-width: 44px; }
+.split-row-amount { font-weight: 500; font-variant-numeric: tabular-nums; }
+.split-remaining {
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-s);
+  background: var(--warning-soft);
+  color: var(--ink-2);
+  text-align: left;
+}
+.split-remaining strong { color: var(--warning); font-weight: 500; }
+
+.stg-goal-row { border: 1px solid var(--line-strong); border-radius: var(--radius-s); background: transparent; }
+.stg-goal-row--active { border-color: var(--accent); background: var(--accent-soft); }
+.stg-goal-name { font-weight: 400; color: var(--ink); }
+.stg-goal-meta { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.stg-goal-label input[type="checkbox"] { accent-color: var(--accent); }
+.stg-add-new-btn { border: 1px dashed var(--line-strong); border-radius: var(--radius-s); color: var(--accent); font-weight: 400; }
+.stg-new-form { background: transparent; border: 1px solid var(--line-strong); border-radius: var(--radius-s); }
+.stg-save-new { border-radius: var(--radius-s); background: var(--accent); font-weight: 500; }
+.stg-no-goals { color: var(--ink-3); }
+
+/* ── Nahratie výpisu a swipe (redizajn) ──────────────────────────────────── */
+
+.upload-intro { margin: 6px 0 0; max-width: 34em; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.upload-area { max-width: none; margin-top: 24px; align-items: stretch; }
+.upload-zone {
+  padding: 40px 24px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-m);
+  background: transparent;
+  gap: 4px;
+}
+.upload-zone:hover,
+.upload-zone--active { border-color: var(--accent); background: var(--accent-soft); }
+.upload-label { font-size: 15px; font-weight: 500; color: var(--ink); }
+.upload-sub { color: var(--ink-3); }
+.upload-error { max-width: none; text-align: left; color: var(--negative); }
+
+.swipe-screen { padding-bottom: 48px; transition: background 0.2s; }
+.swipe-counter { justify-self: end; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.swipe-progress { max-width: none; height: 2px; margin-top: 8px; border-radius: 1px; background: var(--line); }
+.swipe-progress .progress-fill { background: var(--accent); }
+.swipe-help { margin: 20px 0 0; font-size: 13px; color: var(--ink-3); text-align: center; }
+.swipe-stage { display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
+.direction-hints { margin-bottom: 16px; }
+.hint { padding: 5px 10px; border-radius: var(--radius-s); background: transparent; opacity: 1; font-size: 13px; font-weight: 500; }
+.hint--needs, .hint--wants, .hint--savings { background: transparent; }
+.hint--split { margin-top: 16px; background: transparent; }
+
+.card {
+  height: 220px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  gap: 8px;
+}
+.card-store { font-size: 18px; font-weight: 500; }
+.card-amount { font-size: 32px; font-weight: 500; letter-spacing: -0.6px; color: var(--negative); font-variant-numeric: tabular-nums; }
+.card-date { font-size: 13px; color: var(--ink-3); font-weight: 400; }
+.swipe-badge {
+  top: 14px;
+  right: 14px;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
