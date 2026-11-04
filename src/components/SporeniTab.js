@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { ChevronDown, Plus } from 'lucide-react';
+import { formatMoney, formatPercent } from '../utils/format';
+import Money from './Money';
 import GoalCard from './GoalCard';
 import GoalForm from './GoalForm';
 import TransferGoalModal from './TransferGoalModal';
@@ -32,41 +35,52 @@ export default function SporeniTab({ goals, totalSaved, onAdd, onUpdate, onDelet
     setTransferFrom(null);
   };
 
+  const targeted   = activeGoals.filter(g => g.targetAmount != null);
+  const targetSum  = targeted.reduce((sum, g) => sum + g.targetAmount, 0);
+  const targetSaved = targeted.reduce((sum, g) => sum + Math.max(0, netOf(g)), 0);
+
   return (
     <div className="sporenie-tab">
-      <div className="sporenie-total-card">
-        <span className="stat-label">Nasporené v cieľoch</span>
-        <span className="stat-value" style={{ color: '#4C7DFF' }}>+{totalSaved.toFixed(2)} €</span>
-      </div>
+      <section className="hero">
+        <div className="hero-label">Nasporené spolu</div>
+        <div className="hero-value"><Money value={totalSaved} /></div>
+        {targetSum > 0 && (
+          <div className="hero-delta hero-delta--muted">
+            z cieľov {formatMoney(targetSum)} ({formatPercent(Math.min(100, (targetSaved / targetSum) * 100))} %)
+          </div>
+        )}
+      </section>
 
-      {activeGoals.length === 0 && (
-        <p className="sporenie-empty">Zatiaľ žiadne ciele. Pridaj prvý!</p>
-      )}
-
-      <div className="goals-list">
+      <section className="section">
+        <div className="section-head">
+          <h2 className="section-title">Aktívne ciele</h2>
+          <button className="text-btn text-btn--icon" onClick={openAdd}><Plus size={16} />Nový cieľ</button>
+        </div>
+        {activeGoals.length === 0 && (
+          <p className="section-empty">Zatiaľ žiadne ciele. Pridaj prvý cez Nový cieľ.</p>
+        )}
         {activeGoals.map(g => (
           <GoalCard key={g.id} goal={g} goals={goals} onEdit={() => openEdit(g)} onDelete={() => onDelete(g.id)}
             onArchive={() => onUpdate(g.id, { archived: true })}
             onTransfer={activeGoals.length > 1 && netOf(g) > 0.005 ? () => setTransferFrom(g) : null} />
         ))}
-      </div>
+      </section>
 
       {transferFrom && (
         <TransferGoalModal fromGoal={transferFrom} available={netOf(transferFrom)} goals={activeGoals}
           onConfirm={handleTransfer} onCancel={() => setTransferFrom(null)} />
       )}
 
-      <button className="add-goal-btn" onClick={openAdd}>+ Pridať cieľ</button>
-
       {archivedGoals.length > 0 && (
         <details className="goals-archived">
-          <summary>Ukončené ciele ({archivedGoals.length})</summary>
-          <div className="goals-list">
-            {archivedGoals.map(g => (
-              <GoalCard key={g.id} goal={g} goals={goals} onDelete={() => onDelete(g.id)}
-                onRestore={() => onUpdate(g.id, { archived: false })} />
-            ))}
-          </div>
+          <summary>
+            <span>Ukončené ciele ({archivedGoals.length})</span>
+            <ChevronDown size={16} className="goals-archived-chevron" />
+          </summary>
+          {archivedGoals.map(g => (
+            <GoalCard key={g.id} goal={g} goals={goals} onDelete={() => onDelete(g.id)}
+              onRestore={() => onUpdate(g.id, { archived: false })} />
+          ))}
         </details>
       )}
 

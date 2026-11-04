@@ -1,4 +1,5 @@
-import { X, Pencil, Check } from 'lucide-react';
+import { ChevronDown, ArrowLeftRight, Pencil, Check, Trash2, RotateCcw } from 'lucide-react';
+import { formatMoney, formatPercent } from '../utils/format';
 import { useState } from 'react';
 
 const sortKey = m => {
@@ -17,11 +18,11 @@ function buildMovements(goal, goals) {
   const nameOf = id => goals.find(g => g.id === id)?.name ?? 'zmazaný cieľ';
   const ins = (goal.allocations || []).map(a => ({
     ...a, sign: 1,
-    label: a.initial ? 'Počiatočný stav' : a.transfer ? `⇄ z „${nameOf(a.fromGoalId)}“` : a.store,
+    label: a.initial ? 'Počiatočný stav' : a.transfer ? `Presun z „${nameOf(a.fromGoalId)}“` : a.store,
   }));
   const outs = (goal.withdrawals || []).map(w => ({
     ...w, sign: -1,
-    label: w.transfer ? `⇄ do „${nameOf(w.toGoalId)}“` : `↩ ${w.store}`,
+    label: w.transfer ? `Presun do „${nameOf(w.toGoalId)}“` : `Výber: ${w.store}`,
   }));
   return [...ins, ...outs].sort((a, b) => sortKey(b) - sortKey(a));
 }
@@ -40,80 +41,67 @@ export default function GoalCard({ goal, goals = [], onEdit, onDelete, onTransfe
     else onArchive();
   };
 
+  const movements = open ? buildMovements(goal, goals) : [];
+
   return (
-    <div className={`goal-card${goal.archived ? ' goal-card--archived' : ''}`}>
-      <div className="goal-card-top">
-        <button className="goal-toggle" onClick={() => setOpen(o => !o)}>
-          <span className="goal-toggle-arrow">{open ? '▾' : '▸'}</span>
-          <span className="goal-name">{goal.name}</span>
-        </button>
-        <div className="goal-actions">
-          {confirm === 'delete' ? (
-            <>
-              <span className="goal-confirm-label">Vymazať aj zo všetkých mesiacov?</span>
-              <button className="tx-confirm-yes" onClick={onDelete}>Áno</button>
-              <button className="tx-confirm-no" onClick={() => setConfirm(null)}>Nie</button>
-            </>
-          ) : goal.archived ? (
-            <>
-              <button className="goal-edit-btn" onClick={onRestore} title="Obnoviť cieľ">↺</button>
-              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}><X size={16} /></button>
-            </>
-          ) : (
-            <>
-              {onTransfer && <button className="goal-edit-btn" onClick={onTransfer} title="Presunúť do iného cieľa">⇄</button>}
-              <button className="goal-edit-btn" onClick={onEdit} aria-label="Upraviť cieľ"><Pencil size={16} /></button>
-              <button className="goal-edit-btn" onClick={handleArchive} title="Ukončiť cieľ" aria-label="Ukončiť cieľ"><Check size={16} /></button>
-              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}><X size={16} /></button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {confirm === 'blocked' && (
-        <div className="goal-withdrawn-label">
-          V cieli je ešte {net.toFixed(2)} €. Najprv ich presuň cez ⇄ alebo vyber zo sporenia.{' '}
-          <button className="tx-confirm-no" onClick={() => setConfirm(null)}>OK</button>
-        </div>
-      )}
-
-      {goal.targetAmount != null ? (
-        <>
-          <div className="goal-progress-bar">
-            <div className="goal-progress-fill" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="goal-progress-label">
-            <span className="goal-progress-allocated">{net.toFixed(2)} € nasporené</span>
-            <span className="goal-progress-remaining">
-              {pct >= 100
-                ? 'Splnené'
-                : `zostatok ${(goal.targetAmount - net).toFixed(2)} € z ${goal.targetAmount.toFixed(2)} €`}
-            </span>
-          </div>
-          {withdrawn > 0 && (
-            <div className="goal-withdrawn-label">↩ vybraných {withdrawn.toFixed(2)} €</div>
-          )}
-        </>
-      ) : (
-        <div className="goal-progress-label">
-          <span className="goal-progress-allocated">{net.toFixed(2)} € nasporené</span>
-          {withdrawn > 0 && <span className="goal-progress-remaining">↩ vybraných {withdrawn.toFixed(2)} €</span>}
-        </div>
-      )}
+    <div className={`goal-row${goal.archived ? ' goal-row--archived' : ''}`}>
+      <button className="goal-row-main" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className="goal-row-top">
+          <span className="goal-row-name">{goal.name}</span>
+          {pct !== null && <span className="goal-row-pct">{pct >= 100 ? 'Splnené' : `${formatPercent(pct)} %`}</span>}
+          <ChevronDown size={16} className={`goal-row-chevron${open ? ' is-open' : ''}`} />
+        </span>
+        {pct !== null && (
+          <span className="goal-track"><span className="goal-fill" style={{ width: `${pct}%` }} /></span>
+        )}
+        <span className="goal-row-bottom">
+          <span className="goal-row-amount">{formatMoney(net)}</span>
+          {goal.targetAmount != null && <span>z {formatMoney(goal.targetAmount)}</span>}
+        </span>
+        {withdrawn > 0 && <span className="goal-row-note">Vybrané zo sporenia {formatMoney(withdrawn)}</span>}
+      </button>
 
       {open && (
-        <ul className="goal-movements">
-          {buildMovements(goal, goals).map(m => (
-            <li key={`${m.sign}-${m.id}`} className="goal-movement">
-              <span className="goal-movement-date">{formatDate(m)}</span>
-              <span className="goal-movement-label">{m.label}</span>
-              <span className={`goal-movement-amount${m.sign < 0 ? ' goal-movement-amount--out' : ''}`}>
-                {m.sign > 0 ? '+' : '−'}{m.amount.toFixed(2)} €
-              </span>
-            </li>
-          ))}
-          {buildMovements(goal, goals).length === 0 && <li className="goal-movement">Zatiaľ žiadne pohyby.</li>}
-        </ul>
+        <div className="goal-row-detail">
+          {confirm === 'delete' ? (
+            <div className="tx-confirm">
+              <span className="tx-confirm-label">Vymazať cieľ aj zo všetkých mesiacov?</span>
+              <button className="tx-confirm-yes" onClick={onDelete}>Áno</button>
+              <button className="tx-confirm-no" onClick={() => setConfirm(null)}>Nie</button>
+            </div>
+          ) : confirm === 'blocked' ? (
+            <div className="tx-confirm">
+              <span className="tx-confirm-label">V cieli je ešte {formatMoney(net)}. Najprv ich presuň do iného cieľa alebo vyber zo sporenia.</span>
+              <button className="tx-confirm-no" onClick={() => setConfirm(null)}>OK</button>
+            </div>
+          ) : (
+            <div className="goal-row-actions">
+              {goal.archived ? (
+                <button className="text-btn text-btn--icon" onClick={onRestore}><RotateCcw size={15} />Obnoviť</button>
+              ) : (
+                <>
+                  {onTransfer && <button className="text-btn text-btn--icon" onClick={onTransfer}><ArrowLeftRight size={15} />Presunúť</button>}
+                  <button className="text-btn text-btn--icon" onClick={onEdit}><Pencil size={15} />Upraviť</button>
+                  <button className="text-btn text-btn--icon" onClick={handleArchive}><Check size={15} />Ukončiť</button>
+                </>
+              )}
+              <button className="text-btn text-btn--icon text-btn--danger" onClick={() => setConfirm('delete')}><Trash2 size={15} />Vymazať</button>
+            </div>
+          )}
+
+          <ul className="goal-movements">
+            {movements.map(m => (
+              <li key={`${m.sign}-${m.id}`} className="goal-movement">
+                <span className="goal-movement-date">{formatDate(m)}</span>
+                <span className="goal-movement-label">{m.label}</span>
+                <span className={`goal-movement-amount ${m.sign < 0 ? 'is-negative' : 'is-positive'}`}>
+                  {formatMoney(m.sign * m.amount, { sign: true })}
+                </span>
+              </li>
+            ))}
+            {movements.length === 0 && <li className="goal-movement">Zatiaľ žiadne pohyby.</li>}
+          </ul>
+        </div>
       )}
     </div>
   );
