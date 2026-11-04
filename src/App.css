@@ -1794,3 +1794,10 @@ select.goal-input {
 .settings-list-item:hover > span:first-child { color: var(--accent); }
 .settings-list-arrow { color: var(--ink-4); font-size: inherit; }
 .auth-card .auth-loading { margin-top: 0; color: var(--ink); line-height: 1.5; }
+
+/* Rad záložiek v mesiaci: menšie medzery, na úzkom telefóne iba ikony */
+.month-tabs { gap: 20px; }
+.month-tabs-actions { gap: 14px; }
+@media (max-width: 379px) {
+  .month-tabs-actions .text-btn-label { display: none; }
+}

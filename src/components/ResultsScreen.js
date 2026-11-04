@@ -195,11 +195,12 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
           <div className="month-tabs-actions">
             <button
               className={`text-btn text-btn--icon${editMode ? ' is-active' : ''}`}
+              aria-label={editMode ? 'Ukončiť úpravy' : 'Upraviť transakcie'}
               onClick={() => editMode ? setEditMode(false) : setShowEditConfirm(true)}
             >
-              <SlidersHorizontal size={15} />{editMode ? 'Hotovo' : 'Upraviť'}
+              <SlidersHorizontal size={15} /><span className="text-btn-label">{editMode ? 'Hotovo' : 'Upraviť'}</span>
             </button>
-            <button className="text-btn text-btn--icon" onClick={() => setShowAddTransaction(true)}><Plus size={16} />Pridať</button>
+            <button className="text-btn text-btn--icon" onClick={() => setShowAddTransaction(true)} aria-label="Pridať transakciu"><Plus size={16} /><span className="text-btn-label">Pridať</span></button>
           </div>
         )}
       </div>
