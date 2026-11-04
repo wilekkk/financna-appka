@@ -36,7 +36,7 @@ export default function AuthScreen() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <h1 className="auth-title">💰 Finančná Appka</h1>
+        <h1 className="auth-title">Finančná appka</h1>
         <div className="auth-tabs">
           <button className={`auth-tab${mode === 'login' ? ' auth-tab--active' : ''}`} onClick={() => { setMode('login'); setError(''); setInfo(''); }}>Prihlásiť sa</button>
           <button className={`auth-tab${mode === 'register' ? ' auth-tab--active' : ''}`} onClick={() => { setMode('register'); setError(''); setInfo(''); }}>Registrácia</button>

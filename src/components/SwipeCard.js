@@ -1,3 +1,4 @@
+import { Store } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { getDirection, getPreviewKey } from '../utils/swipe';
 import { CAT_MAP, SPLIT_INFO } from '../constants';
@@ -48,10 +49,10 @@ export default function SwipeCard({ transaction, onSwipe, onSplitRequest }) {
     >
       {previewCat && isMoving && (
         <div className="swipe-badge" style={{ color: previewCat.color, borderColor: previewCat.color }}>
-          {previewKey === 'split' ? '✂️ Rozdeliť' : previewCat.label}
+          {previewKey === 'split' ? 'Rozdeliť' : previewCat.label}
         </div>
       )}
-      <div className="card-icon">🏪</div>
+      <div className="card-icon"><Store size={28} strokeWidth={1.5} /></div>
       <div className="card-store">{transaction.store}</div>
       <div className="card-amount">{transaction.amount.toFixed(2)} €</div>
       <div className="card-date">{transaction.date}</div>

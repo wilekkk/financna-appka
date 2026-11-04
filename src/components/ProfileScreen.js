@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -17,14 +18,14 @@ export default function ProfileScreen({ user, onBack }) {
       data: { first_name: firstName.trim(), last_name: lastName.trim() },
     });
     if (error) setError(error.message);
-    else setInfo('Uložené ✓');
+    else setInfo('Uložené');
     setSaving(false);
   };
 
   return (
     <div className="yearly-screen">
       <div className="nav-header">
-        <button className="back-btn" onClick={onBack}>← Späť</button>
+        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
         <h1 className="nav-title">Profil</h1>
       </div>
 

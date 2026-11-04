@@ -1,3 +1,4 @@
+import { FileUp } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { parseCSV } from '../utils/csv';
 
@@ -29,7 +30,7 @@ export default function UploadZone({ onLoad }) {
         onDragLeave={() => setDropping(false)}
         onDrop={e => { e.preventDefault(); setDropping(false); handleFile(e.dataTransfer.files[0]); }}
       >
-        <div className="upload-icon">📂</div>
+        <div className="upload-icon"><FileUp size={36} strokeWidth={1.5} /></div>
         <p className="upload-label">Nahraj CSV výpis z Tatra banky</p>
         <p className="upload-sub">Klikni alebo pretiahni súbor sem</p>
         <input ref={inputRef} type="file" accept=".csv" style={{ display: 'none' }}

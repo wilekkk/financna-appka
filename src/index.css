@@ -1,10 +1,71 @@
+:root {
+  color-scheme: dark;
+
+  /* Podklad a text */
+  --canvas: #0E131B;
+  --surface: #161D28;
+  --surface-2: #1C2431;
+  --line: #242D3B;
+  --border: #242D3B;
+  --line-strong: #2F3A4B;
+  --ink: #E8ECF2;
+  --ink-2: #A3ADBD;
+  --ink-3: #7D8798;
+  --ink-4: #4A5466;
+  --overlay: rgba(4, 7, 12, 0.72);
+
+  /* Akcent */
+  --accent: #4C7DFF;
+  --accent-hover: #6B93FF;
+  --accent-soft: rgba(76, 125, 255, 0.14);
+  --accent-line: rgba(76, 125, 255, 0.4);
+
+  /* Príjem a výdavok */
+  --positive: #2FBF7F;
+  --positive-soft: rgba(47, 191, 127, 0.14);
+  --positive-line: rgba(47, 191, 127, 0.4);
+  --negative: #F2645A;
+  --negative-soft: rgba(242, 100, 90, 0.14);
+  --negative-line: rgba(242, 100, 90, 0.4);
+
+  /* Kategórie */
+  --cat-needs: #E8C547;
+  --cat-wants: #9D7CF2;
+  --cat-savings: #4FA3E8;
+  --needs-soft: rgba(232, 197, 71, 0.14);
+  --needs-line: rgba(232, 197, 71, 0.45);
+  --wants-soft: rgba(157, 124, 242, 0.14);
+  --wants-line: rgba(157, 124, 242, 0.45);
+  --savings-soft: rgba(79, 163, 232, 0.14);
+  --savings-line: rgba(79, 163, 232, 0.45);
+
+  /* Upozornenie */
+  --warning: #E3A245;
+  --warning-soft: rgba(227, 162, 69, 0.14);
+
+  /* Zaoblenie */
+  --radius-s: 6px;
+  --radius-m: 16px;
+  --radius-l: 16px;
+
+  /* Písmo */
+  --font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background: var(--canvas);
+  font-family: var(--font);
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 code {

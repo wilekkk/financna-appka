@@ -1,3 +1,4 @@
+import { ChevronLeft, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CategoriesScreen({ customCategories, onAddCategory, onDeleteCategory, onBack }) {
@@ -18,7 +19,7 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
   return (
     <div className="yearly-screen">
       <div className="nav-header">
-        <button className="back-btn" onClick={onBack}>← Späť</button>
+        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
         <h1 className="nav-title">Podkategórie príjmov/výdavkov</h1>
       </div>
 
@@ -32,7 +33,7 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
           {customCategories.filter(category => category.type === 'income').map(category => (
             <div className="category-row" key={category.id}>
               <span>{category.name}</span>
-              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}>×</button>
+              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><X size={16} /></button>
             </div>
           ))}
           {!customCategories.some(category => category.type === 'income') && (
@@ -44,7 +45,7 @@ export default function CategoriesScreen({ customCategories, onAddCategory, onDe
           {customCategories.filter(category => category.type === 'expense').map(category => (
             <div className="category-row" key={category.id}>
               <span>{category.name}</span>
-              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}>×</button>
+              <button className="category-delete-btn" onClick={() => setCategoryToDelete(category)} aria-label={`Vymazať ${category.name}`}><X size={16} /></button>
             </div>
           ))}
           {!customCategories.some(category => category.type === 'expense') && (

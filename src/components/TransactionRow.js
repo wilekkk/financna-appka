@@ -1,3 +1,4 @@
+import { X, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { CATS, CAT_MAP } from '../constants';
 import { getRemainingAmount } from '../utils/finance';
@@ -20,7 +21,7 @@ function getBubbleAmounts(item) {
   };
 }
 
-function EditableBubble({ value, color, emoji, onChange }) {
+function EditableBubble({ value, color, onChange }) {
   const [editing, setEditing] = useState(false);
   const [input, setInput]     = useState('');
 
@@ -29,7 +30,7 @@ function EditableBubble({ value, color, emoji, onChange }) {
 
   if (editing) {
     return (
-      <span className="bubble-editing" style={{ background: color }}>
+      <span className="bubble-editing" style={{ '--tag-color': color }}>
         <input className="bubble-input" type="number" step="0.01" value={input}
           onChange={e => setInput(e.target.value)}
           onBlur={confirm}
@@ -40,8 +41,8 @@ function EditableBubble({ value, color, emoji, onChange }) {
     );
   }
   return (
-    <span className="summary-tag" style={{ background: color, cursor: 'pointer' }} onClick={start}>
-      {emoji} {value.toFixed(2)} €
+    <span className="summary-tag" style={{ '--tag-color': color, cursor: 'pointer' }} onClick={start}>
+      {value.toFixed(2)} €
     </span>
   );
 }
@@ -111,11 +112,11 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
     >
       <div className="tx-row-top">
         {editMode && (
-          <button className="tx-delete-btn" onClick={() => setConfirmDelete(c => !c)}>×</button>
+          <button className="tx-delete-btn" onClick={() => setConfirmDelete(c => !c)}><X size={14} /></button>
         )}
         <span className="tx-store">{item.transaction.store}</span>
         {editMode && editingAmount ? (
-          <span className="amount-editing" style={{ color: isCredit ? '#22c55e' : '#ef4444' }}>
+          <span className="amount-editing" style={{ color: isCredit ? '#2FBF7F' : '#F2645A' }}>
             <input
               className="amount-input"
               type="number" step="0.01"
@@ -136,7 +137,7 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
         ) : (
           <span
             className={`tx-amount${editMode ? ' tx-amount--editable' : ''}`}
-            style={{ color: isCredit ? '#22c55e' : '#ef4444' }}
+            style={{ color: isCredit ? '#2FBF7F' : '#F2645A' }}
             onClick={editMode && !isCleared ? () => { setAmountInput(abs.toFixed(2)); setEditingAmount(true); } : undefined}
           >
             {(isCredit ? abs : -abs).toFixed(2)} €
@@ -157,8 +158,8 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           <span className="tx-date">{item.transaction.date}</span>
           {isCredit ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <span className="summary-tag" style={{ background: CAT_MAP['prijem'].color, whiteSpace: 'nowrap' }}>
-                {CAT_MAP['prijem'].emoji} {abs.toFixed(2)} €
+              <span className="summary-tag" style={{ '--tag-color': CAT_MAP['prijem'].color, whiteSpace: 'nowrap' }}>
+                {abs.toFixed(2)} €
               </span>
               {txWithdrawals.length > 0 && txWithdrawals.map((w) => (
                 <span
@@ -173,7 +174,7 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           ) : editMode ? (
             <div className="tx-bubbles-area">
               {bubbleCats.map(c => (
-                <EditableBubble key={c.key} value={amounts[c.key]} color={c.color} emoji={c.emoji}
+                <EditableBubble key={c.key} value={amounts[c.key]} color={c.color}
                   onChange={val => onUpdateAmounts(item._idx, { ...amounts, [c.key]: val }, abs)}
                 />
               ))}
@@ -181,8 +182,8 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           ) : (
             <div className="tx-tags">
               {bubbleCats.filter(c => amounts[c.key] > 0.005).map(c => (
-                <span key={c.key} className="summary-tag" style={{ background: c.color, whiteSpace: 'nowrap' }}>
-                  {c.emoji} {amounts[c.key].toFixed(2)} €
+                <span key={c.key} className="summary-tag" style={{ '--tag-color': c.color, whiteSpace: 'nowrap' }}>
+                  {amounts[c.key].toFixed(2)} €
                 </span>
               ))}
             </div>
@@ -247,7 +248,7 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
       )}
 
       {editMode && !isValid && !confirmDelete && (
-        <p className="tx-validation-warn">⚠ Súčet: {sum.toFixed(2)} € / {abs.toFixed(2)} €</p>
+        <p className="tx-validation-warn"><TriangleAlert size={12} className="inline-icon" />Súčet: {sum.toFixed(2)} € / {abs.toFixed(2)} €</p>
       )}
 
       {showGoalBtn && !confirmDelete && (
@@ -255,7 +256,7 @@ export default function TransactionRow({ item, editMode, savingsGoals, customCat
           {txAllocations.length > 0 ? (
             <div className="tx-alloc-list">
               {txAllocations.map((a, i) => (
-                <span key={i} className="tx-alloc-tag">💰 {a.goalName} · {a.amount.toFixed(2)} €</span>
+                <span key={i} className="tx-alloc-tag">{a.goalName} · {a.amount.toFixed(2)} €</span>
               ))}
               {canAllocateMore && (
                 <button className="goal-alloc-btn" onClick={() => setShowGoalModal(true)} title="Pridať ďalší cieľ">+</button>

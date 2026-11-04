@@ -36,7 +36,7 @@ export default function SporeniTab({ goals, totalSaved, onAdd, onUpdate, onDelet
     <div className="sporenie-tab">
       <div className="sporenie-total-card">
         <span className="stat-label">Nasporené v cieľoch</span>
-        <span className="stat-value" style={{ color: '#3b82f6' }}>+{totalSaved.toFixed(2)} €</span>
+        <span className="stat-value" style={{ color: '#4C7DFF' }}>+{totalSaved.toFixed(2)} €</span>
       </div>
 
       {activeGoals.length === 0 && (

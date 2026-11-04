@@ -1,7 +1,14 @@
 import { useState } from 'react';
+import { LogOut } from 'lucide-react';
+import { CAT_MAP, MONTH_NAMES_IN } from '../constants';
 import { calcMonthTotals, calcSubcategoryTotals, getRemainingAmount } from '../utils/finance';
-import MonthlyBarChart from './MonthlyBarChart';
+import { formatMoney, formatNumber, formatPercent } from '../utils/format';
+import Money from './Money';
+import CashflowChart from './CashflowChart';
+import BottomNav from './BottomNav';
 import SporeniTab from './SporeniTab';
+
+const CAT_KEYS = ['needs', 'wants', 'savings'];
 
 export default function YearlyScreen({ months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenSettings, onSelectMonth, user, onLogout }) {
   const [activeTab, setActiveTab] = useState('prehled');
@@ -16,15 +23,32 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
   const totalIncome   = stats.reduce((s, m) => s + m.income, 0);
   const totalExpenses = stats.reduce((s, m) => s + m.expenses, 0);
   const netCF         = totalIncome - totalExpenses;
-  const totalNeeds    = stats.reduce((s, m) => s + m.needs, 0);
-  const totalWants    = stats.reduce((s, m) => s + m.wants, 0);
-  const totalSavingsCat = stats.reduce((s, m) => s + m.savings, 0);
-  const pct = v => totalExpenses > 0 ? ((v / totalExpenses) * 100).toFixed(1) : '0.0';
   const totalSaved    = savingsGoals.reduce((s, g) => {
     const alloc = (g.allocations || []).reduce((a, x) => a + x.amount, 0);
     const withdr = (g.withdrawals  || []).reduce((a, x) => a + x.amount, 0);
     return s + Math.max(0, alloc - withdr);
   }, 0);
+
+  // Kategórie výdavkov za rok
+  const categories = CAT_KEYS.map(key => {
+    const value = stats.reduce((s, m) => s + m[key], 0);
+    return { key, label: CAT_MAP[key].label, color: CAT_MAP[key].color, value, pct: totalExpenses > 0 ? (value / totalExpenses) * 100 : 0 };
+  });
+
+  // Graf: kumulatívny cashflow po posledný mesiac s dátami
+  const lastIdx = stats.reduce((acc, m, i) => (m.hasData ? i : acc), -1);
+  let running = 0;
+  const cfPoints = stats.map((m, i) => {
+    running += m.income - m.expenses;
+    return { label: m.label.slice(0, 3), value: i <= lastIdx ? running : null };
+  });
+  const lastMonth = lastIdx >= 0 ? stats[lastIdx] : null;
+  const lastNet = lastMonth ? lastMonth.income - lastMonth.expenses : 0;
+
+  // Mesiace s dátami, najnovší hore
+  const monthRows = stats.map((m, i) => ({ ...m, month: months[i] })).filter(m => m.hasData).reverse();
+
+  // Podkategórie za celý rok
   const allTransactions = months.flatMap(month => {
     const data = monthsData[month.key];
     return data ? [...(data.history || []), ...(data.creditHistory || [])] : [];
@@ -46,20 +70,13 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
   ];
 
   return (
-    <div className="yearly-screen">
-      <div className="yearly-header">
-        <h1 className="app-title" style={{ margin: 0 }}>Prehľad {year}</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="months-btn" onClick={onOpenMonths}>Mesiace →</button>
-          <button className="settings-btn" onClick={onOpenSettings} aria-label="Nastavenia" title="Nastavenia">⚙</button>
-          <button className="logout-btn" onClick={onLogout} title={user?.email}>⎋</button>
-        </div>
-      </div>
-
-      <div className="tabs" style={{ width: '100%' }}>
-        <button className={`tab-btn${activeTab === 'prehled' ? ' tab-btn--active' : ''}`} onClick={() => setActiveTab('prehled')}>Prehľad</button>
-        <button className={`tab-btn${activeTab === 'sporenie' ? ' tab-btn--active' : ''}`} onClick={() => setActiveTab('sporenie')}>Sporenie</button>
-      </div>
+    <div className="yearly-screen overview-screen">
+      <header className="screen-header">
+        <h1 className="screen-title">{activeTab === 'sporenie' ? 'Sporenie' : year}</h1>
+        <button className="icon-btn" onClick={onLogout} title={user?.email} aria-label="Odhlásiť sa">
+          <LogOut size={20} strokeWidth={1.75} />
+        </button>
+      </header>
 
       {activeTab === 'sporenie' && (
         <SporeniTab
@@ -72,79 +89,116 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
       )}
 
       {activeTab === 'prehled' && <>
-        <div className="kpi-grid">
-          {[
-            { label: 'Celkové príjmy',  value: `+${totalIncome.toFixed(2)} €`,                              color: '#22c55e' },
-            { label: 'Celkové výdavky', value: `-${totalExpenses.toFixed(2)} €`,                            color: '#ef4444' },
-            { label: 'Čistý CF (YTD)',  value: `${netCF >= 0 ? '+' : ''}${netCF.toFixed(2)} €`,             color: netCF >= 0 ? '#22c55e' : '#ef4444' },
-          ].map(k => (
-            <div key={k.label} className="kpi-card">
-              <span className="kpi-label">{k.label}</span>
-              <span className="kpi-value" style={{ color: k.color }}>{k.value}</span>
+        <section className="hero">
+          <div className="hero-label">Čistý cashflow za rok</div>
+          <div className={`hero-value${netCF < -0.004 ? ' is-negative' : ''}`}><Money value={netCF} sign /></div>
+          {lastMonth && (
+            <div className={`hero-delta ${lastNet < -0.004 ? 'is-negative' : 'is-positive'}`}>
+              {formatMoney(lastNet, { sign: true })} {MONTH_NAMES_IN[lastIdx]}
             </div>
-          ))}
-        </div>
+          )}
+        </section>
 
-        <div className="kpi-grid kpi-grid--3">
-          {[
-            { label: 'Needs',   value: totalNeeds.toFixed(2),      pct: pct(totalNeeds),      color: '#f97316' },
-            { label: 'Wants',   value: totalWants.toFixed(2),      pct: pct(totalWants),      color: '#ef4444' },
-            { label: 'Savings', value: totalSavingsCat.toFixed(2), pct: pct(totalSavingsCat), color: '#3b82f6' },
-          ].map(k => (
-            <div key={k.label} className="kpi-card">
-              <span className="kpi-label">{k.label}</span>
-              <span className="kpi-value" style={{ color: k.color }}>{k.value} €</span>
-              <span className="kpi-pct" style={{ color: k.color }}>{k.pct} %</span>
-            </div>
-          ))}
-        </div>
+        <CashflowChart points={cfPoints} activeIndex={lastIdx} />
 
-        <MonthlyBarChart stats={stats} />
-
-        <div className="chart-box">
-          <span className="chart-title">Mesačný prehľad</span>
-          <div className="mtable-scroll">
-            <table className="mtable">
-              <thead>
-                <tr><th>Mesiac</th><th>Príjmy</th><th>Needs</th><th>Wants</th><th>Savings</th></tr>
-              </thead>
-              <tbody>
-                {stats.map((m, i) => (
-                  <tr key={m.key} className={m.hasData ? 'mtrow--done' : ''} onClick={() => onSelectMonth(months[i])}>
-                    <td className="mtd-month">{m.label.slice(0, 3)}</td>
-                    <td className="mtd-income">{m.hasData ? m.income.toFixed(2) : '—'}</td>
-                    <td>{m.hasData ? m.needs.toFixed(2) : '—'}</td>
-                    <td>{m.hasData ? m.wants.toFixed(2) : '—'}</td>
-                    <td>{m.hasData ? m.savings.toFixed(2) : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="split-figures">
+          <div>
+            <div className="figure-label">Príjmy</div>
+            <div className="figure-value is-positive">{formatMoney(totalIncome, { sign: true })}</div>
           </div>
-        </div>
+          <div>
+            <div className="figure-label">Výdavky</div>
+            <div className="figure-value is-negative">{formatMoney(-totalExpenses)}</div>
+          </div>
+        </section>
 
-        <div className="subcategory-summary yearly-subcategory-summary">
-          <h3 className="subcategory-summary-title">Podkategórie za celý rok</h3>
-          <section>
-            <h4 className="subcategory-summary-heading">Príjmy</h4>
-            {incomeSubcategories.map(category => (
-              <div key={category.id} className={`subcategory-summary-row subcategory-summary-row--income${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`}>
-                <span>{category.name}</span>
-                <strong>+{category.total.toFixed(2)} €</strong>
+        <section className="section">
+          <div className="section-head">
+            <h2 className="section-title">Rozdelenie výdavkov</h2>
+            <span className="section-meta">{formatMoney(totalExpenses)}</span>
+          </div>
+          {totalExpenses > 0 ? <>
+            <div className="cat-bar" role="img" aria-label={categories.map(c => `${c.label} ${formatPercent(c.pct)} %`).join(', ')}>
+              {categories.filter(c => c.value > 0).map(c => (
+                <span key={c.key} style={{ flexGrow: c.value, background: c.color }} />
+              ))}
+            </div>
+            {categories.map(c => (
+              <div key={c.key} className="cat-row">
+                <span className="cat-name" style={{ color: c.color }}>
+                  <span className="cat-swatch" style={{ background: c.color }} />{c.label}
+                </span>
+                <span className="cat-pct">{formatPercent(c.pct)} %</span>
+                <span className="cat-amount">{formatMoney(c.value)}</span>
               </div>
             ))}
-          </section>
-          <section>
-            <h4 className="subcategory-summary-heading">Výdavky</h4>
-            {expenseSubcategories.map(category => (
-              <div key={category.id} className={`subcategory-summary-row subcategory-summary-row--expense${category.unassigned ? ' subcategory-summary-row--unassigned' : ''}`}>
-                <span>{category.name}</span>
-                <strong>-{category.total.toFixed(2)} €</strong>
+          </> : <p className="section-empty">Zatiaľ žiadne výdavky.</p>}
+        </section>
+
+        <section className="section">
+          <div className="section-head">
+            <h2 className="section-title">Mesiace</h2>
+            <button className="text-btn" onClick={onOpenMonths}>Zobraziť všetky</button>
+          </div>
+          {monthRows.length > 0 ? (
+            <div className="month-table">
+              <div className="month-table-head">
+                <span>Mesiac</span><span>Príjmy</span><span>Výdavky</span><span>Rozdiel</span>
               </div>
-            ))}
-          </section>
-        </div>
+              {monthRows.map(m => {
+                const net = m.income - m.expenses;
+                return (
+                  <button key={m.key} className="month-table-row" onClick={() => onSelectMonth(m.month)}>
+                    <span className="month-table-cells">
+                      <span>{m.label}</span>
+                      <span className="is-positive">{formatNumber(m.income)}</span>
+                      <span className="is-negative">{formatNumber(m.expenses)}</span>
+                      <span className={net < -0.004 ? 'is-negative' : ''}>{formatNumber(net, { sign: true })}</span>
+                    </span>
+                    {m.expenses > 0 && (
+                      <span className="month-table-bar" aria-hidden="true">
+                        {CAT_KEYS.filter(k => m[k] > 0).map(k => (
+                          <span key={k} style={{ flexGrow: m[k], background: CAT_MAP[k].color }} />
+                        ))}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="section-empty">Zatiaľ žiadny mesiac. Nahraj výpis v časti Mesiace.</p>
+          )}
+        </section>
+
+        <section className="section">
+          <div className="section-head">
+            <h2 className="section-title">Podkategórie za celý rok</h2>
+          </div>
+          <h3 className="subsection-title">Príjmy</h3>
+          {incomeSubcategories.map(category => (
+            <div key={category.id} className={`list-row${category.unassigned ? ' list-row--muted' : ''}`}>
+              <span>{category.name}</span>
+              <span className="is-positive">{formatMoney(category.total, { sign: true })}</span>
+            </div>
+          ))}
+          <h3 className="subsection-title">Výdavky</h3>
+          {expenseSubcategories.map(category => (
+            <div key={category.id} className={`list-row${category.unassigned ? ' list-row--muted' : ''}`}>
+              <span>{category.name}</span>
+              <span className="is-negative">{formatMoney(-category.total)}</span>
+            </div>
+          ))}
+        </section>
       </>}
+
+      <BottomNav
+        active={activeTab === 'sporenie' ? 'sporenie' : 'prehled'}
+        onOverview={() => setActiveTab('prehled')}
+        onMonths={onOpenMonths}
+        onSavings={() => setActiveTab('sporenie')}
+        onSettings={onOpenSettings}
+      />
     </div>
   );
 }

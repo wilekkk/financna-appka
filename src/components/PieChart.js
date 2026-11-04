@@ -22,9 +22,9 @@ export default function PieChart({ slices, total }) {
     <div className="pie-wrapper">
       <svg viewBox="0 0 200 200" className="pie-svg">
         {paths.map(p => <path key={p.key} d={p.d} fill={p.color} />)}
-        <circle cx={cx} cy={cy} r={hole} fill="#f8fafc" />
-        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="#94a3b8" fontFamily="-apple-system,sans-serif">Výdavky</text>
-        <text x={cx} y={cy + 13} textAnchor="middle" fontSize="17" fontWeight="700" fill="#1e293b" fontFamily="-apple-system,sans-serif">{total.toFixed(0)} €</text>
+        <circle cx={cx} cy={cy} r={hole} fill="#0E131B" />
+        <text x={cx} y={cy - 7} textAnchor="middle" fontSize="10" fill="#7D8798" fontFamily="Geist,-apple-system,sans-serif">Výdavky</text>
+        <text x={cx} y={cy + 13} textAnchor="middle" fontSize="17" fontWeight="700" fill="#E8ECF2" fontFamily="Geist,-apple-system,sans-serif">{total.toFixed(0)} €</text>
       </svg>
       <div className="pie-legend">
         {slices.filter(s => s.value > 0).map(s => (

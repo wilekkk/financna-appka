@@ -40,7 +40,7 @@ export default function DashboardTab({ history, creditHistory, customCategories,
           <span className="stat-value">-{totalExpenses.toFixed(2)} €</span>
         </div>
         <div className={`stat-card stat-card--balance stat-card--net${(totalIncome - totalExpenses) >= 0 ? ' positive' : ' negative'}`}>
-          <span className="stat-label">{(totalIncome - totalExpenses) >= 0 ? '💪 Zarobil si' : '📉 Minul si'}</span>
+          <span className="stat-label">{(totalIncome - totalExpenses) >= 0 ? 'Zarobil si' : 'Minul si'}</span>
           <span className="stat-value">{Math.abs(totalIncome - totalExpenses).toFixed(2)} €</span>
         </div>
       </div>

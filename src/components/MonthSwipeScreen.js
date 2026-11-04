@@ -1,3 +1,4 @@
+import { ChevronLeft, ArrowLeft, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { useState, useRef } from 'react';
 import UploadZone from './UploadZone';
 import SwipeCard from './SwipeCard';
@@ -54,7 +55,7 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
     return (
       <div className="screen">
         <div className="nav-header">
-          <button className="back-btn" onClick={onBack}>← Späť</button>
+          <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
           <span className="nav-title">{month.label}</span>
         </div>
         {existingHistory.length > 0 && (
@@ -71,18 +72,18 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
   return (
     <div className={`screen${flash ? ` screen--flash-${flash}` : ''}`}>
       <div className="nav-header">
-        <button className="back-btn" onClick={onBack}>← Späť</button>
+        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
         <span className="nav-title">{month.label}</span>
       </div>
       <div className="direction-hints">
-        <div className="hint hint--wants">← Wants</div>
-        <div className="hint hint--savings">↑ Savings</div>
-        <div className="hint hint--needs">Needs →</div>
+        <div className="hint hint--wants"><ArrowLeft size={14} />Wants</div>
+        <div className="hint hint--savings"><ArrowUp size={14} />Savings</div>
+        <div className="hint hint--needs">Needs<ArrowRight size={14} /></div>
       </div>
       <div className="card-area">
         <SwipeCard key={transaction.id} transaction={transaction} onSwipe={handleSwipe} onSplitRequest={() => setShowSplit(true)} />
       </div>
-      <div className="hint hint--split">↓ Rozdeliť</div>
+      <div className="hint hint--split"><ArrowDown size={14} />Rozdeliť</div>
       <p className="counter">{index + 1} / {debitList.length}</p>
       <div className="progress-bar">
         <div className="progress-fill" style={{ width: `${(index / debitList.length) * 100}%` }} />

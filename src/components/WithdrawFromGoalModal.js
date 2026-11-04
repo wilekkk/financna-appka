@@ -1,3 +1,4 @@
+import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 export default function WithdrawFromGoalModal({ transaction, maxAmount, goals, existingWithdrawals, onConfirm, onCancel }) {
@@ -74,7 +75,7 @@ export default function WithdrawFromGoalModal({ transaction, maxAmount, goals, e
         <div className="split-handle" />
         <div className="split-tx-info">
           <span className="split-tx-store">{transaction.store}</span>
-          <span className="split-tx-amount" style={{ color: '#22c55e' }}>↩ {maxAmount.toFixed(2)} €</span>
+          <span className="split-tx-amount" style={{ color: '#2FBF7F' }}>↩ {maxAmount.toFixed(2)} €</span>
         </div>
 
         {visibleGoals.length === 0 ? (
@@ -94,7 +95,7 @@ export default function WithdrawFromGoalModal({ transaction, maxAmount, goals, e
                   <label className="stg-goal-label">
                     <input type="checkbox" checked={sel.selected} onChange={() => toggle(g.id)} />
                     <span className="stg-goal-name">{g.name}</span>
-                    <span className="stg-goal-meta" style={{ color: '#22c55e' }}>max {avail.toFixed(2)} €</span>
+                    <span className="stg-goal-meta" style={{ color: '#2FBF7F' }}>max {avail.toFixed(2)} €</span>
                   </label>
                   {sel.selected && (
                     <div className="goal-amount-row stg-amount-row">
@@ -112,8 +113,8 @@ export default function WithdrawFromGoalModal({ transaction, maxAmount, goals, e
           </div>
         )}
 
-        {overMax    && <div className="split-remaining">⚠ Presah o <strong>{(totalSelected - maxAmount).toFixed(2)} €</strong> nad sumu transakcie</div>}
-        {exceedsGoal && <div className="split-remaining">⚠ Suma presahuje zostatok cieľa</div>}
+        {overMax    && <div className="split-remaining"><TriangleAlert size={14} className="inline-icon" />Presah o <strong>{(totalSelected - maxAmount).toFixed(2)} €</strong> nad sumu transakcie</div>}
+        {exceedsGoal && <div className="split-remaining"><TriangleAlert size={14} className="inline-icon" />Suma presahuje zostatok cieľa</div>}
 
         <div className="split-actions">
           <button className="split-cancel-btn" onClick={onCancel}>Zrušiť</button>

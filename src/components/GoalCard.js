@@ -1,3 +1,4 @@
+import { X, Pencil, Check } from 'lucide-react';
 import { useState } from 'react';
 
 const sortKey = m => {
@@ -56,14 +57,14 @@ export default function GoalCard({ goal, goals = [], onEdit, onDelete, onTransfe
           ) : goal.archived ? (
             <>
               <button className="goal-edit-btn" onClick={onRestore} title="Obnoviť cieľ">↺</button>
-              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}>×</button>
+              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}><X size={16} /></button>
             </>
           ) : (
             <>
               {onTransfer && <button className="goal-edit-btn" onClick={onTransfer} title="Presunúť do iného cieľa">⇄</button>}
-              <button className="goal-edit-btn" onClick={onEdit}>✏️</button>
-              <button className="goal-edit-btn" onClick={handleArchive} title="Ukončiť cieľ">✓</button>
-              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}>×</button>
+              <button className="goal-edit-btn" onClick={onEdit} aria-label="Upraviť cieľ"><Pencil size={16} /></button>
+              <button className="goal-edit-btn" onClick={handleArchive} title="Ukončiť cieľ" aria-label="Ukončiť cieľ"><Check size={16} /></button>
+              <button className="tx-delete-btn" onClick={() => setConfirm('delete')}><X size={16} /></button>
             </>
           )}
         </div>
@@ -85,7 +86,7 @@ export default function GoalCard({ goal, goals = [], onEdit, onDelete, onTransfe
             <span className="goal-progress-allocated">{net.toFixed(2)} € nasporené</span>
             <span className="goal-progress-remaining">
               {pct >= 100
-                ? '✓ Splnené'
+                ? 'Splnené'
                 : `zostatok ${(goal.targetAmount - net).toFixed(2)} € z ${goal.targetAmount.toFixed(2)} €`}
             </span>
           </div>

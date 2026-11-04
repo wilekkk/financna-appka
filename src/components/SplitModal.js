@@ -33,7 +33,7 @@ export default function SplitModal({ transaction, onConfirm, onCancel }) {
                 <span className="split-pct">{splits[cat.key]}%</span>
                 <button className="split-btn" onClick={() => adjust(cat.key, +5)} disabled={remaining < 5}>+</button>
               </div>
-              <div className="split-row-amount" style={{ color: splits[cat.key] > 0 ? cat.color : '#cbd5e1' }}>
+              <div className="split-row-amount" style={{ color: splits[cat.key] > 0 ? cat.color : '#4A5466' }}>
                 {splits[cat.key] > 0 ? `${fmtAmt(splits[cat.key])} €` : '—'}
               </div>
             </div>

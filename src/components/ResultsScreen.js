@@ -1,3 +1,4 @@
+import { ChevronLeft, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
@@ -134,7 +135,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
   return (
     <div className="screen">
       <div className="nav-header">
-        <button className="back-btn" onClick={onBack}>← Späť</button>
+        <button className="back-btn" onClick={onBack}><ChevronLeft size={18} />Späť</button>
         <span className="nav-title">{month.label}</span>
         <button className="reset-month-btn" onClick={() => setShowResetConfirm(true)}>↺ Reset</button>
       </div>
@@ -148,7 +149,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             className={`edit-mode-btn${editMode ? ' edit-mode-btn--active' : ''}`}
             onClick={() => editMode ? setEditMode(false) : setShowEditConfirm(true)}
           >
-            ⚙️ Upraviť
+            <SlidersHorizontal size={14} /> Upraviť
           </button>
           {editMode && <span className="clearing-hint">Potiahni príjem na výdavok (alebo opačne) a vyrovnaj ich</span>}
           <button className="add-more-btn" onClick={onAddMore}>+ Nahrať výpis</button>
@@ -159,7 +160,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
       {showEditConfirm && (
         <div className="confirm-overlay" onClick={() => setShowEditConfirm(false)}>
           <div className="confirm-modal" onClick={e => e.stopPropagation()}>
-            <div className="confirm-modal-icon">⚙️</div>
+            <div className="confirm-modal-icon"><SlidersHorizontal size={28} strokeWidth={1.5} /></div>
             <h3 className="confirm-modal-title">Prepnúť do editačného módu?</h3>
             <p className="confirm-modal-text">Editačný mód je určený skúsenejším používateľom. Môžete meniť sumy, kategórie aj mazať transakcie.</p>
             <div className="confirm-modal-actions">
@@ -178,7 +179,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             <p className="confirm-modal-text">Vymažú sa všetky transakcie za {month.label}. Budete môcť nahrať výpis znovu.</p>
             <div className="confirm-modal-actions">
               <button className="confirm-modal-cancel" onClick={() => setShowResetConfirm(false)}>Zrušiť</button>
-              <button className="confirm-modal-ok" style={{ background: '#ef4444' }} onClick={() => { setShowResetConfirm(false); onReset(); }}>Vymazať</button>
+              <button className="confirm-modal-ok" style={{ background: '#F2645A' }} onClick={() => { setShowResetConfirm(false); onReset(); }}>Vymazať</button>
             </div>
           </div>
         </div>
