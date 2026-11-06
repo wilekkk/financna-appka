@@ -1673,6 +1673,7 @@ select.goal-input {
 
 .upload-intro { margin: 6px 0 0; max-width: 34em; font-size: 15px; line-height: 1.5; color: var(--ink); }
 .upload-area { max-width: none; margin-top: 24px; align-items: stretch; }
+.upload-bank { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .upload-zone {
   padding: 40px 24px;
   border: 1px dashed var(--line-strong);

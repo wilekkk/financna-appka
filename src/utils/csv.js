@@ -46,3 +46,34 @@ export function parseCSV(text) {
     return [{ id: i + 1, store, amount, date: (cols[iDatum] || '').trim(), typ: isDebet ? 'debet' : 'kredit' }];
   });
 }
+
+// Revolut (anglický export). Stĺpce čítame podľa poradia, nie podľa názvu:
+// 0 Type, 1 Product, 2 Started Date, 3 Completed Date, 4 Description,
+// 5 Amount, 6 Fee, 7 Currency, 8 State, 9 Balance
+const REVOLUT_SKIPPED_STATES = ['REVERTED', 'DECLINED', 'FAILED'];
+
+// "2026-10-01 15:38:51" -> "01.10.2026"
+function revolutDate(str) {
+  const match = (str || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
+}
+
+export function parseRevolutCSV(text) {
+  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  return lines.slice(1).flatMap((line, i) => {
+    const cols = parseCSVRow(line);
+    if (cols.length < 9) return [];
+    const [, product, started, completed, description, amountRaw, feeRaw, currency, state] = cols;
+    if (product !== 'Current') return [];
+    if (currency !== 'EUR') return [];
+    if (REVOLUT_SKIPPED_STATES.includes(state.toUpperCase())) return [];
+
+    // Poplatok Revolut strháva navyše, takže skutočná suma = Amount - Fee.
+    const amount = Math.round((parseAmount(amountRaw) - Math.abs(parseAmount(feeRaw))) * 100) / 100;
+    if (amount === 0) return [];
+    const date = revolutDate(completed) || revolutDate(started); // PENDING ešte nemá Completed Date
+    return [{ id: i + 1, store: description || '(neznámy)', amount, date, typ: amount < 0 ? 'debet' : 'kredit' }];
+  });
+}
