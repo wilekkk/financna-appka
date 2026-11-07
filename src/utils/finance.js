@@ -35,10 +35,25 @@ export function calcSubcategoryTotals(items, customCategories) {
     .sort((a, b) => b.total - a.total);
 }
 
-export function generateMonths() {
-  const year = new Date().getFullYear();
+export function generateMonths(year = new Date().getFullYear()) {
   return MONTH_NAMES.map((name, m) => ({
     key: `${year}-${String(m + 1).padStart(2, '0')}`,
     label: name,
   }));
+}
+
+// Roky, medzi ktorými sa dá prepínať: od roka pred najstarším rokom s dátami
+// (aby sa dali nahrať aj staršie výpisy) po aktuálny rok.
+export function getYearRange(monthsData, currentYear) {
+  const dataYears = Object.keys(monthsData).map(key => Number(key.slice(0, 4)));
+  return { min: Math.min(currentYear, ...dataYears) - 1, max: currentYear };
+}
+
+// Mesiac posunutý o delta mesiacov, aj cez hranicu roka: shiftMonth('2026-12', 1) -> január 2027.
+export function shiftMonth(key, delta) {
+  const [year, month] = key.split('-').map(Number);
+  const index = year * 12 + (month - 1) + delta;
+  const newYear = Math.floor(index / 12);
+  const newMonth = index % 12;
+  return { key: `${newYear}-${String(newMonth + 1).padStart(2, '0')}`, label: MONTH_NAMES[newMonth] };
 }

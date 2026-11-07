@@ -2,16 +2,16 @@ import { ChevronRight, FileUp } from 'lucide-react';
 import { CAT_MAP } from '../constants';
 import { calcMonthTotals } from '../utils/finance';
 import { formatMoney } from '../utils/format';
+import YearSwitch from './YearSwitch';
 
 const CAT_KEYS = ['needs', 'wants', 'savings'];
 
 // Zoznam mesiacov roka. Mesiac s dátami ukáže výsledok, prázdny ponúkne nahratie výpisu.
-export default function HomeScreen({ months, monthsData, onSelect }) {
-  const year = months[0]?.key.slice(0, 4);
+export default function HomeScreen({ year, minYear, maxYear, onChangeYear, months, monthsData, onSelect }) {
   return (
     <div className="yearly-screen overview-screen">
       <header className="screen-header">
-        <h1 className="screen-title">Mesiace {year}</h1>
+        <YearSwitch title={`Mesiace ${year}`} year={year} minYear={minYear} maxYear={maxYear} onChange={onChangeYear} />
       </header>
 
       <div className="month-rows">

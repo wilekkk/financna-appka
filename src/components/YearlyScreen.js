@@ -5,12 +5,12 @@ import { formatMoney, formatNumber, formatPercent } from '../utils/format';
 import Money from './Money';
 import CashflowChart from './CashflowChart';
 import SporeniTab from './SporeniTab';
+import YearSwitch from './YearSwitch';
 
 const CAT_KEYS = ['needs', 'wants', 'savings'];
 
-export default function YearlyScreen({ months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout, tab = 'prehled' }) {
+export default function YearlyScreen({ year, minYear, maxYear, onChangeYear, months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout, tab = 'prehled' }) {
   const activeTab = tab;
-  const year = new Date().getFullYear();
   const stats = months.map(({ key, label }) => {
     const data = monthsData[key];
     if (!data) return { key, label, income: 0, needs: 0, wants: 0, savings: 0, expenses: 0, hasData: false };
@@ -70,7 +70,9 @@ export default function YearlyScreen({ months, monthsData, customCategories, sav
   return (
     <div className="yearly-screen overview-screen">
       <header className="screen-header">
-        <h1 className="screen-title">{activeTab === 'sporenie' ? 'Sporenie' : year}</h1>
+        {activeTab === 'sporenie'
+          ? <h1 className="screen-title">Sporenie</h1>
+          : <YearSwitch title={year} year={year} minYear={minYear} maxYear={maxYear} onChange={onChangeYear} />}
         <button className="icon-btn" onClick={onLogout} title={user?.email} aria-label="Odhlásiť sa">
           <LogOut size={20} strokeWidth={1.75} />
         </button>

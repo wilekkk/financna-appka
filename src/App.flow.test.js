@@ -18,7 +18,14 @@ jest.mock('./supabaseClient', () => ({
 
 const months = generateMonths();
 const tx = (amount, date, store, extra = {}) => ({ transaction: { amount, store, date, id: extra.id ?? `${store}-${date}` }, splits: null, ...extra });
+const Y = Number(months[0].key.slice(0, 4));
 const sample = {
+  // minulý rok: december, a január tohto roka (prázdny), aby sa dal otestovať prechod cez rok
+  [`${Y - 1}-12`]: {
+    history: [tx(-100, `15.12.${Y - 1}`, 'Darčeky', { category: 'wants' })],
+    creditHistory: [tx(1000, `20.12.${Y - 1}`, 'Výplata december', { category: 'prijem' })],
+  },
+  [months[0].key]: { history: [], creditHistory: [] },
   [months[8].key]: {
     history: [tx(-600, '01.09.2026', 'Nájom', { category: 'needs' })],
     creditHistory: [tx(2840, '30.09.2026', 'Výplata', { category: 'prijem' })],
@@ -60,9 +67,29 @@ test('celá aplikácia funguje', async () => {
   const hero = norm(document.querySelector('.hero-value'));
   expect(norm(screen.getByText(/v októbri/))).toBe('+2 454,70 € v októbri');
   expect(document.querySelectorAll('.cf-svg path').length).toBe(2);
-  expect(document.querySelectorAll('.month-table-row').length).toBe(2);
+  expect(document.querySelectorAll('.month-table-row').length).toBe(3);
   expect(screen.getByText('Rozdelenie výdavkov')).toBeTruthy();
   log('Prehľad OK', hero);
+
+  // 1b. Prepínanie rokov a prechod z decembra na január
+  expect(screen.getByLabelText('Nasledujúci rok').disabled).toBe(true);
+  fireEvent.click(screen.getByLabelText('Predchádzajúci rok'));
+  expect(screen.getByText(String(Y - 1))).toBeTruthy();
+  expect(norm(document.querySelector('.hero-value'))).toBe('+900,00 €');
+  expect(document.querySelectorAll('.month-table-row').length).toBe(1);
+  fireEvent.click(screen.getByText('December'));
+  expect(screen.getByText(`December ${Y - 1}`)).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('Nasledujúci mesiac'));
+  expect(screen.getByText(`Január ${Y}`)).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('Predchádzajúci mesiac'));
+  expect(screen.getByText(`December ${Y - 1}`)).toBeTruthy();
+  nav('Mesiace');
+  expect(screen.getByText(`Mesiace ${Y - 1}`)).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('Nasledujúci rok'));
+  expect(screen.getByText(`Mesiace ${Y}`)).toBeTruthy();
+  nav('Prehľad');
+  expect(screen.getByText(String(Y))).toBeTruthy();
+  log('Roky OK: prepínanie, december → január');
 
   // 2. Sporenie cez spodné menu
   nav('Sporenie');
@@ -83,7 +110,7 @@ test('celá aplikácia funguje', async () => {
   nav('Mesiace');
   expect(screen.getByText(`Mesiace ${months[0].key.slice(0, 4)}`)).toBeTruthy();
   expect(document.querySelectorAll('.month-row').length).toBe(12);
-  expect(document.querySelectorAll('.month-row--empty').length).toBe(10);
+  expect(document.querySelectorAll('.month-row--empty').length).toBe(9);
   fireEvent.click(screen.getByText('Október'));
   expect(screen.getByText(`Október ${months[9].key.slice(0, 4)}`)).toBeTruthy();
   expect(norm(document.querySelector('.hero-value'))).toBe('+2 454,70 €');

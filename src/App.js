@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import './App.css';
 import { supabase } from './supabaseClient';
-import { generateMonths } from './utils/finance';
+import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData } from './utils/db';
 import AuthScreen from './components/AuthScreen';
@@ -31,7 +31,10 @@ function App() {
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [dataLoadError, setDataLoadError] = useState(null);
   const [dataSaveError, setDataSaveError] = useState(null);
-  const months = useMemo(() => generateMonths(), []);
+  const currentYear = new Date().getFullYear();
+  const [year, setYear]                   = useState(currentYear);
+  const months = useMemo(() => generateMonths(year), [year]);
+  const yearRange = getYearRange(monthsData, currentYear);
   const isInitialLoad = useRef(true);
   const dataLoadedForUser = useRef(false);
 
@@ -105,6 +108,7 @@ function App() {
 
   const handleSelect = month => {
     setSelectedMonth(month);
+    setYear(Number(month.key.slice(0, 4)));
     setSelectedSubcategory(null);
     setScreen(monthsData[month.key] ? 'results' : 'swipe');
   };
@@ -159,8 +163,10 @@ function App() {
     </>
   );
 
+  const yearSwitch = { year, minYear: yearRange.min, maxYear: yearRange.max, onChangeYear: setYear };
+
   if (screen === 'yearly' || screen === 'savings') {
-    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
+    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} {...yearSwitch} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
   }
 
   if (screen === 'settings') {
@@ -176,7 +182,7 @@ function App() {
   }
 
   if (screen === 'months') {
-    return withNav(<HomeScreen months={months} monthsData={monthsData} onSelect={handleSelect} />);
+    return withNav(<HomeScreen {...yearSwitch} months={months} monthsData={monthsData} onSelect={handleSelect} />);
   }
 
   if (screen === 'swipe') {
@@ -194,9 +200,9 @@ function App() {
   }
 
   const data = monthsData[selectedMonth.key];
-  const monthIndex = months.findIndex(m => m.key === selectedMonth.key);
-  const prevMonth = months[monthIndex - 1];
-  const nextMonth = months[monthIndex + 1];
+  // Susedné mesiace, aj cez hranicu roka (december → január)
+  const prevMonth = shiftMonth(selectedMonth.key, -1);
+  const nextMonth = shiftMonth(selectedMonth.key, 1);
   return withNav(
     <ResultsScreen
       key={selectedMonth.key}
@@ -215,8 +221,8 @@ function App() {
       onAddMore={handleAddMore}
       onReset={handleReset}
       onBack={() => setScreen('months')}
-      onPrevMonth={prevMonth && monthsData[prevMonth.key] ? () => handleSelect(prevMonth) : null}
-      onNextMonth={nextMonth && monthsData[nextMonth.key] ? () => handleSelect(nextMonth) : null}
+      onPrevMonth={monthsData[prevMonth.key] ? () => handleSelect(prevMonth) : null}
+      onNextMonth={monthsData[nextMonth.key] ? () => handleSelect(nextMonth) : null}
     />
   );
 }
