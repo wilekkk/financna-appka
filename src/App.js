@@ -5,6 +5,7 @@ import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData } from './utils/db';
 import AuthScreen from './components/AuthScreen';
+import NewPasswordScreen from './components/NewPasswordScreen';
 import YearlyScreen from './components/YearlyScreen';
 import HomeScreen from './components/HomeScreen';
 import MonthSwipeScreen from './components/MonthSwipeScreen';
@@ -21,6 +22,14 @@ const NAV_FOR_SCREEN = {
 };
 const SCREEN_FOR_NAV = { prehled: 'yearly', sporenie: 'savings', mesiace: 'months', nastavenia: 'settings' };
 
+// Odkaz z emailu (obnova hesla, potvrdenie registrácie) pridá informácie do adresy za znak #.
+// Čítame ich hneď pri štarte, kým ich Supabase z adresy neodstráni.
+const START_HASH = window.location.hash;
+const OPENED_FROM_RECOVERY_LINK = START_HASH.includes('type=recovery');
+const LINK_ERROR = START_HASH.includes('error_code=')
+  ? 'Odkaz z emailu vypršal alebo už bol použitý. Požiadaj o nový.'
+  : '';
+
 function App() {
   const [user, setUser]                    = useState(undefined); // undefined = loading
   const [screen, setScreen]               = useState('yearly');
@@ -31,6 +40,7 @@ function App() {
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [dataLoadError, setDataLoadError] = useState(null);
   const [dataSaveError, setDataSaveError] = useState(null);
+  const [settingNewPassword, setSettingNewPassword] = useState(OPENED_FROM_RECOVERY_LINK);
   const currentYear = new Date().getFullYear();
   const [year, setYear]                   = useState(currentYear);
   const months = useMemo(() => generateMonths(year), [year]);
@@ -43,8 +53,9 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') setSettingNewPassword(true);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -138,7 +149,11 @@ function App() {
   }
 
   if (!user) {
-    return <AuthScreen />;
+    return <AuthScreen initialError={LINK_ERROR} />;
+  }
+
+  if (settingNewPassword) {
+    return <NewPasswordScreen onDone={() => setSettingNewPassword(false)} />;
   }
 
   if (dataLoadError || dataSaveError) {

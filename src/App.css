@@ -1749,6 +1749,9 @@ select.goal-input {
 .auth-label { margin-top: 10px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
 .auth-input { width: 100%; }
 .auth-input:disabled { color: var(--ink-3); background: transparent; }
+/* Odkazy „Zabudnuté heslo?“, „Späť na prihlásenie“: dosť veľké na ťuknutie prstom */
+.auth-link { align-self: flex-start; min-height: 32px; margin-top: 4px; font-size: 14px; }
+.auth-card > .auth-link { align-self: center; margin-top: -12px; }
 .auth-error,
 .auth-info { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-s); font-size: 13px; line-height: 1.4; }
 .auth-error { border: 1px solid var(--negative-line); background: var(--negative-soft); color: var(--ink); }
