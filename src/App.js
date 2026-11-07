@@ -3,7 +3,7 @@ import './App.css';
 import { supabase } from './supabaseClient';
 import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
-import { loadUserData, saveUserData } from './utils/db';
+import { loadUserData, saveUserData, DataConflictError } from './utils/db';
 import AuthScreen from './components/AuthScreen';
 import NewPasswordScreen from './components/NewPasswordScreen';
 import YearlyScreen from './components/YearlyScreen';
@@ -45,8 +45,37 @@ function App() {
   const [year, setYear]                   = useState(currentYear);
   const months = useMemo(() => generateMonths(year), [year]);
   const yearRange = getYearRange(monthsData, currentYear);
-  const isInitialLoad = useRef(true);
+  const [dataConflict, setDataConflict]   = useState(false);
   const dataLoadedForUser = useRef(false);
+  // Synchronizácia s databázou:
+  // serverUpdatedAt = čas posledného uloženia, ktorý appka pozná (verzia dát v databáze),
+  // lastSynced = dáta, ktoré sú práve také isté ako v databáze (nič neuložené),
+  // latest = aktuálne dáta a obrazovka pre udalosti mimo Reactu (návrat do appky),
+  // saveQueue = ukladania idú jedno po druhom, nikdy nie naraz.
+  const serverUpdatedAt = useRef(null);
+  const lastSynced = useRef(null);
+  const latest = useRef(null);
+  const saveQueue = useRef(Promise.resolve());
+  const savingStopped = useRef(false);
+  latest.current = { monthsData, savingsGoals, customCategories, screen };
+
+  const isSynced = data => !!lastSynced.current
+    && data.monthsData === lastSynced.current.monthsData
+    && data.savingsGoals === lastSynced.current.savingsGoals
+    && data.customCategories === lastSynced.current.customCategories;
+
+  const applyLoadedData = loaded => {
+    const synced = {
+      monthsData: loaded.monthsData,
+      savingsGoals: loaded.savingsGoals,
+      customCategories: loaded.customCategories ?? DEFAULT_SUBCATEGORIES,
+    };
+    serverUpdatedAt.current = loaded.updatedAt ?? null;
+    lastSynced.current = synced;
+    setMonthsData(synced.monthsData);
+    setSavingsGoals(synced.savingsGoals);
+    setCustomCategories(synced.customCategories);
+  };
 
   // Auth listener
   useEffect(() => {
@@ -66,20 +95,19 @@ function App() {
       dataLoadedForUser.current = false;
       return;
     }
-    isInitialLoad.current = true;
     dataLoadedForUser.current = false;
+    lastSynced.current = null;
+    savingStopped.current = false;
     setDataLoadError(null);
     setDataSaveError(null);
+    setDataConflict(false);
     let cancelled = false;
 
     loadUserData(user.id)
-      .then(({ monthsData: md, savingsGoals: sg, customCategories: cc }) => {
+      .then(loaded => {
         if (cancelled) return;
-        setMonthsData(md);
-        setSavingsGoals(sg);
-        setCustomCategories(cc ?? DEFAULT_SUBCATEGORIES);
+        applyLoadedData(loaded);
         dataLoadedForUser.current = true;
-        isInitialLoad.current = false;
       })
       .catch(error => {
         if (cancelled) return;
@@ -90,19 +118,56 @@ function App() {
     return () => { cancelled = true; };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Autosave to Supabase (debounced 1 s)
+  // Automatické ukladanie 1 s po poslednej zmene. Uloží len vtedy, ak sa dáta v databáze
+  // medzitým nezmenili. Inak ukáže hlášku a nič neprepíše.
   useEffect(() => {
-    if (!user || isInitialLoad.current || !dataLoadedForUser.current || dataLoadError || dataSaveError) return;
-    const timer = setTimeout(async () => {
-      try {
-        await saveUserData(user.id, monthsData, savingsGoals, customCategories);
-      } catch (error) {
-        console.error('Nepodarilo sa uložiť dáta:', error);
-        setDataSaveError(error);
-      }
+    if (!user || !dataLoadedForUser.current || dataLoadError || dataSaveError || dataConflict) return;
+    const snapshot = { monthsData, savingsGoals, customCategories };
+    if (isSynced(snapshot)) return;
+    const timer = setTimeout(() => {
+      saveQueue.current = saveQueue.current.then(async () => {
+        if (savingStopped.current) return; // po chybe už ďalej neukladáme
+        try {
+          const updatedAt = await saveUserData(user.id, monthsData, savingsGoals, customCategories, serverUpdatedAt.current);
+          serverUpdatedAt.current = updatedAt ?? null;
+          lastSynced.current = snapshot;
+        } catch (error) {
+          savingStopped.current = true;
+          if (error instanceof DataConflictError) {
+            setDataConflict(true);
+          } else {
+            console.error('Nepodarilo sa uložiť dáta:', error);
+            setDataSaveError(error);
+          }
+        }
+      });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [monthsData, savingsGoals, customCategories, user, dataLoadError, dataSaveError]);
+  }, [monthsData, savingsGoals, customCategories, user, dataLoadError, dataSaveError, dataConflict]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Po návrate do appky (prepnutie karty, odomknutie mobilu) načíta novšie dáta z iného zariadenia.
+  // Neurobí to, ak je niečo neuložené alebo práve triediš výpis, aby sa nič nestratilo.
+  useEffect(() => {
+    if (!user) return;
+    const canRefresh = () => document.visibilityState === 'visible'
+      && dataLoadedForUser.current
+      && latest.current.screen !== 'swipe'
+      && isSynced(latest.current);
+    const refresh = async () => {
+      if (!canRefresh()) return;
+      const syncedBefore = lastSynced.current;
+      try {
+        const loaded = await loadUserData(user.id);
+        // Ak sa počas čakania niečo uložilo, odpoveď je už stará, takže ju zahodíme.
+        const savedMeanwhile = lastSynced.current !== syncedBefore;
+        if (!savedMeanwhile && (loaded.updatedAt ?? null) !== serverUpdatedAt.current && canRefresh()) applyLoadedData(loaded);
+      } catch (error) {
+        console.error('Nepodarilo sa skontrolovať novšie dáta:', error);
+      }
+    };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReset = () => {
     setMonthsData(prev => { const { [selectedMonth.key]: _, ...rest } = prev; return rest; });
@@ -156,11 +221,15 @@ function App() {
     return <NewPasswordScreen onDone={() => setSettingNewPassword(false)} />;
   }
 
-  if (dataLoadError || dataSaveError) {
+  if (dataLoadError || dataSaveError || dataConflict) {
     return (
       <div className="auth-screen">
         <div className="auth-card">
-          <div className="auth-loading">Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.</div>
+          <div className="auth-loading">
+            {dataConflict
+              ? 'Dáta sa medzitým zmenili na inom zariadení. Obnov stránku, aby si videl najnovšiu verziu.'
+              : 'Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.'}
+          </div>
           <div className="dialog-actions">
             <button className="dialog-cancel-btn" onClick={() => supabase.auth.signOut()}>Odhlásiť sa</button>
             <button className="primary-action-btn" onClick={() => window.location.reload()}>Obnoviť stránku</button>
@@ -196,7 +265,8 @@ function App() {
     return withNav(<CategoriesScreen customCategories={customCategories} onAddCategory={handleAddCategory} onDeleteCategory={handleDeleteCategory} onBack={() => setScreen('settings')} />);
   }
 
-  if (screen === 'months') {
+  // Mesiac mohol medzitým zmiznúť (napr. vymazaný na inom zariadení), vtedy ukáž zoznam mesiacov.
+  if (screen === 'months' || (screen === 'results' && !monthsData[selectedMonth?.key])) {
     return withNav(<HomeScreen {...yearSwitch} months={months} monthsData={monthsData} onSelect={handleSelect} />);
   }
 
