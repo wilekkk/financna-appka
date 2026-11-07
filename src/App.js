@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData, DataConflictError } from './utils/db';
+import { markActivity, clearActivity, isInactiveTooLong } from './utils/inactivity';
 import AuthScreen from './components/AuthScreen';
 import NewPasswordScreen from './components/NewPasswordScreen';
 import YearlyScreen from './components/YearlyScreen';
@@ -29,6 +30,8 @@ const OPENED_FROM_RECOVERY_LINK = START_HASH.includes('type=recovery');
 const LINK_ERROR = START_HASH.includes('error_code=')
   ? 'Odkaz z emailu vypršal alebo už bol použitý. Požiadaj o nový.'
   : '';
+// Kliknutie na odkaz z emailu je čerstvá aktivita, takže kvôli nečinnosti ťa hneď neodhlási.
+if (START_HASH.includes('access_token')) markActivity();
 
 function App() {
   const [user, setUser]                    = useState(undefined); // undefined = loading
@@ -46,6 +49,7 @@ function App() {
   const months = useMemo(() => generateMonths(year), [year]);
   const yearRange = getYearRange(monthsData, currentYear);
   const [dataConflict, setDataConflict]   = useState(false);
+  const [loggedOutForInactivity, setLoggedOutForInactivity] = useState(false);
   const dataLoadedForUser = useRef(false);
   // Synchronizácia s databázou:
   // serverUpdatedAt = čas posledného uloženia, ktorý appka pozná (verzia dát v databáze),
@@ -57,7 +61,8 @@ function App() {
   const latest = useRef(null);
   const saveQueue = useRef(Promise.resolve());
   const savingStopped = useRef(false);
-  latest.current = { monthsData, savingsGoals, customCategories, screen };
+  const loggingOut = useRef(false);
+  latest.current = { user, monthsData, savingsGoals, customCategories, screen };
 
   const isSynced = data => !!lastSynced.current
     && data.monthsData === lastSynced.current.monthsData
@@ -77,17 +82,40 @@ function App() {
     setCustomCategories(synced.customCategories);
   };
 
-  // Auth listener
+  const logoutForInactivity = async () => {
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    const { user: currentUser, monthsData: md, savingsGoals: sg, customCategories: cc } = latest.current;
+    if (currentUser && dataLoadedForUser.current) {
+      await queueSave(currentUser.id, { monthsData: md, savingsGoals: sg, customCategories: cc });
+    }
+    clearActivity();
+    setLoggedOutForInactivity(true);
+    await supabase.auth.signOut();
+    loggingOut.current = false;
+  };
+
+  // Prihlásenie zo Supabase. Session uloženú z minula prijmeme len vtedy, ak od poslednej
+  // aktivity neuplynula viac ako hodina.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const acceptSession = session => {
+      if (session && isInactiveTooLong()) {
+        setTimeout(logoutForInactivity, 0); // Supabase neodporúča volať ho priamo v tejto udalosti
+        return;
+      }
+      if (session) {
+        markActivity();
+        setLoggedOutForInactivity(false);
+      }
       setUser(session?.user ?? null);
-    });
+    };
+    supabase.auth.getSession().then(({ data: { session } }) => acceptSession(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
+      acceptSession(session);
       if (event === 'PASSWORD_RECOVERY') setSettingNewPassword(true);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load data after login
   useEffect(() => {
@@ -118,38 +146,71 @@ function App() {
     return () => { cancelled = true; };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Automatické ukladanie 1 s po poslednej zmene. Uloží len vtedy, ak sa dáta v databáze
-  // medzitým nezmenili. Inak ukáže hlášku a nič neprepíše.
+  // Pridá uloženie do radu a vráti promise, ktorý skončí po uložení. Uloží len vtedy, ak sa dáta
+  // v databáze medzitým nezmenili. Inak ukáže hlášku a nič neprepíše.
+  const queueSave = (userId, snapshot) => {
+    saveQueue.current = saveQueue.current.then(async () => {
+      if (savingStopped.current || isSynced(snapshot)) return; // po chybe už neukladáme, uložené netreba znova
+      try {
+        const updatedAt = await saveUserData(userId, snapshot.monthsData, snapshot.savingsGoals, snapshot.customCategories, serverUpdatedAt.current);
+        serverUpdatedAt.current = updatedAt ?? null;
+        lastSynced.current = snapshot;
+      } catch (error) {
+        savingStopped.current = true;
+        if (error instanceof DataConflictError) {
+          setDataConflict(true);
+        } else {
+          console.error('Nepodarilo sa uložiť dáta:', error);
+          setDataSaveError(error);
+        }
+      }
+    });
+    return saveQueue.current;
+  };
+
+  // Automatické ukladanie 1 s po poslednej zmene.
   useEffect(() => {
     if (!user || !dataLoadedForUser.current || dataLoadError || dataSaveError || dataConflict) return;
     const snapshot = { monthsData, savingsGoals, customCategories };
     if (isSynced(snapshot)) return;
-    const timer = setTimeout(() => {
-      saveQueue.current = saveQueue.current.then(async () => {
-        if (savingStopped.current) return; // po chybe už ďalej neukladáme
-        try {
-          const updatedAt = await saveUserData(user.id, monthsData, savingsGoals, customCategories, serverUpdatedAt.current);
-          serverUpdatedAt.current = updatedAt ?? null;
-          lastSynced.current = snapshot;
-        } catch (error) {
-          savingStopped.current = true;
-          if (error instanceof DataConflictError) {
-            setDataConflict(true);
-          } else {
-            console.error('Nepodarilo sa uložiť dáta:', error);
-            setDataSaveError(error);
-          }
-        }
-      });
-    }, 1000);
+    const timer = setTimeout(() => queueSave(user.id, snapshot), 1000);
     return () => clearTimeout(timer);
   }, [monthsData, savingsGoals, customCategories, user, dataLoadError, dataSaveError, dataConflict]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Odhlásenie po hodine nečinnosti. Kontroluje sa pri návrate do appky, raz za minútu
+  // a pri ťuknutí sa zapíše čas aktivity. Neuložená zmena sa pred odhlásením ešte uloží.
+  useEffect(() => {
+    if (!user) return;
+    let lastMarked = 0;
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastMarked < 15_000) return; // stačí zapisovať raz za 15 s
+      lastMarked = now;
+      markActivity(now);
+    };
+    const check = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (isInactiveTooLong()) logoutForInactivity();
+      else markActivity();
+    };
+    const interval = setInterval(() => { if (isInactiveTooLong()) logoutForInactivity(); }, 60_000);
+    window.addEventListener('pointerdown', onActivity);
+    window.addEventListener('keydown', onActivity);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('pointerdown', onActivity);
+      window.removeEventListener('keydown', onActivity);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Po návrate do appky (prepnutie karty, odomknutie mobilu) načíta novšie dáta z iného zariadenia.
   // Neurobí to, ak je niečo neuložené alebo práve triediš výpis, aby sa nič nestratilo.
   useEffect(() => {
     if (!user) return;
     const canRefresh = () => document.visibilityState === 'visible'
+      && !isInactiveTooLong() // vtedy sa odhlasuje
       && dataLoadedForUser.current
       && latest.current.screen !== 'swipe'
       && isSynced(latest.current);
@@ -214,7 +275,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthScreen initialError={LINK_ERROR} />;
+    return <AuthScreen initialError={LINK_ERROR} initialInfo={loggedOutForInactivity ? 'Odhlásili sme ťa po hodine nečinnosti. Prihlás sa znova.' : ''} />;
   }
 
   if (settingNewPassword) {

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { markActivity } from '../utils/inactivity';
 
 const RESET_SENT = 'Ak k tomuto emailu existuje účet, poslali sme naň odkaz na nastavenie nového hesla. Skontroluj aj spam.';
 
 // initialError: chyba z odkazu v emaili (napr. vypršaný odkaz), ktorú appka našla v adrese stránky.
-export default function AuthScreen({ initialError = '' }) {
+// initialInfo: oznam pri otvorení, napr. že ťa appka odhlásila po nečinnosti.
+export default function AuthScreen({ initialError = '', initialInfo = '' }) {
   const [mode, setMode]       = useState('login'); // login | register | reset
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName]   = useState('');
@@ -12,7 +14,7 @@ export default function AuthScreen({ initialError = '' }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(initialError);
-  const [info, setInfo]       = useState('');
+  const [info, setInfo]       = useState(initialInfo);
 
   const switchMode = next => { setMode(next); setError(''); setInfo(''); };
 
@@ -32,6 +34,7 @@ export default function AuthScreen({ initialError = '' }) {
         setInfo(RESET_SENT);
       }
     } else if (mode === 'login') {
+      markActivity(); // ešte pred prihlásením, aby appka nebrala staré prihlásenie ako nečinnosť
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
     } else {
