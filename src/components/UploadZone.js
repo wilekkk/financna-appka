@@ -1,6 +1,7 @@
 import { FileUp } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { parseCSV, parseRevolutCSV } from '../utils/csv';
+import { BANK_STATEMENT_HELP } from '../constants';
 
 // Každá banka má vlastný formát výpisu aj kódovanie súboru.
 const BANKS = {
@@ -54,6 +55,10 @@ export default function UploadZone({ onLoad }) {
         <input ref={inputRef} type="file" accept=".csv" style={{ display: 'none' }}
                onChange={e => { handleFile(e.target.files[0]); e.target.value = ''; }} />
       </div>
+      <details className="upload-help">
+        <summary>Ako stiahnuť výpis {BANKS[bank].from}?</summary>
+        <ol>{BANK_STATEMENT_HELP[bank].steps.map(step => <li key={step}>{step}</li>)}</ol>
+      </details>
       {error && <p className="upload-error">{error}</p>}
     </div>
   );

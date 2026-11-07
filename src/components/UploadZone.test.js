@@ -21,6 +21,13 @@ test('po výbere Revolutu nahrá revolutový výpis aj s diakritikou', async () 
   ]);
 });
 
+test('pomoc so stiahnutím výpisu sa mení podľa zvolenej banky', () => {
+  render(<UploadZone onLoad={jest.fn()} />);
+  expect(screen.getByText('Ako stiahnuť výpis z Tatra banky?')).toBeTruthy();
+  fireEvent.click(screen.getByText('Revolut'));
+  expect(screen.getByText('Ako stiahnuť výpis z Revolutu?')).toBeTruthy();
+});
+
 test('pri zlej banke ukáže chybu s názvom vybranej banky', async () => {
   const onLoad = jest.fn();
   render(<UploadZone onLoad={onLoad} />);

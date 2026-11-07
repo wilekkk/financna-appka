@@ -9,7 +9,7 @@ import YearSwitch from './YearSwitch';
 
 const CAT_KEYS = ['needs', 'wants', 'savings'];
 
-export default function YearlyScreen({ year, minYear, maxYear, onChangeYear, months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onSelectMonth, user, onLogout, tab = 'prehled' }) {
+export default function YearlyScreen({ year, minYear, maxYear, onChangeYear, months, monthsData, customCategories, savingsGoals, onAddGoal, onUpdateGoal, onDeleteGoal, onOpenMonths, onOpenGuide, isNewUser, onSelectMonth, user, onLogout, tab = 'prehled' }) {
   const activeTab = tab;
   const stats = months.map(({ key, label }) => {
     const data = monthsData[key];
@@ -89,6 +89,16 @@ export default function YearlyScreen({ year, minYear, maxYear, onChangeYear, mon
       )}
 
       {activeTab === 'prehled' && <>
+        {isNewUser && (
+          <section className="welcome">
+            <h2 className="section-title">Začni prvým výpisom</h2>
+            <p className="welcome-text">Nahraj CSV výpis z banky za jeden mesiac a zatrieď výdavky potiahnutím karty. Prehľad sa potom vyplní sám.</p>
+            <div className="welcome-actions">
+              <button className="primary-action-btn" onClick={onOpenMonths}>Nahrať výpis</button>
+              <button className="text-btn" onClick={onOpenGuide}>Ako na to</button>
+            </div>
+          </section>
+        )}
         <section className="hero">
           <div className="hero-label">Čistý cashflow za rok</div>
           <div className={`hero-value${netCF < -0.004 ? ' is-negative' : ''}`}><Money value={netCF} sign /></div>

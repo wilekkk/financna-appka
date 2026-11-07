@@ -14,12 +14,13 @@ import ResultsScreen from './components/ResultsScreen';
 import SettingsScreen from './components/SettingsScreen';
 import ProfileScreen from './components/ProfileScreen';
 import CategoriesScreen from './components/CategoriesScreen';
+import GuideScreen from './components/GuideScreen';
 import BottomNav from './components/BottomNav';
 
 // Ktorá položka spodného menu svieti na ktorej obrazovke. Obrazovky bez položky menu nemajú.
 const NAV_FOR_SCREEN = {
   yearly: 'prehled', savings: 'sporenie', months: 'mesiace', results: 'mesiace',
-  settings: 'nastavenia', profile: 'nastavenia', categories: 'nastavenia',
+  settings: 'nastavenia', profile: 'nastavenia', categories: 'nastavenia', guide: 'nastavenia',
 };
 const SCREEN_FOR_NAV = { prehled: 'yearly', sporenie: 'savings', mesiace: 'months', nastavenia: 'settings' };
 
@@ -50,6 +51,7 @@ function App() {
   const yearRange = getYearRange(monthsData, currentYear);
   const [dataConflict, setDataConflict]   = useState(false);
   const [loggedOutForInactivity, setLoggedOutForInactivity] = useState(false);
+  const [guideReturnScreen, setGuideReturnScreen] = useState('settings'); // kam sa vrátiť z návodu
   const dataLoadedForUser = useRef(false);
   // Synchronizácia s databázou:
   // serverUpdatedAt = čas posledného uloženia, ktorý appka pozná (verzia dát v databáze),
@@ -237,6 +239,11 @@ function App() {
 
   const handleAddMore = () => setScreen('swipe');
 
+  const handleOpenGuide = () => {
+    setGuideReturnScreen(screen);
+    setScreen('guide');
+  };
+
   const handleAddGoal    = data => setSavingsGoals(prev => [...prev, { ...data, id: Date.now() }]);
   const handleUpdateGoal = (id, data) => setSavingsGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
   const handleDeleteGoal = id => setSavingsGoals(prev => prev.filter(g => g.id !== id));
@@ -311,11 +318,15 @@ function App() {
   const yearSwitch = { year, minYear: yearRange.min, maxYear: yearRange.max, onChangeYear: setYear };
 
   if (screen === 'yearly' || screen === 'savings') {
-    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} {...yearSwitch} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
+    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} {...yearSwitch} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenGuide={handleOpenGuide} isNewUser={dataLoadedForUser.current && Object.keys(monthsData).length === 0} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
   }
 
   if (screen === 'settings') {
-    return withNav(<SettingsScreen onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} />);
+    return withNav(<SettingsScreen onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} onOpenGuide={handleOpenGuide} />);
+  }
+
+  if (screen === 'guide') {
+    return withNav(<GuideScreen onBack={() => setScreen(guideReturnScreen)} />);
   }
 
   if (screen === 'profile') {
