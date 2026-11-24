@@ -234,6 +234,23 @@ test('celá aplikácia funguje', async () => {
   fireEvent.click(screen.getByLabelText('Späť na nastavenia'));
   fireEvent.click(screen.getByText('Profil'));
   expect(screen.getByDisplayValue('test@test.sk')).toBeTruthy();
+  // export dát: stiahne súbor JSON so všetkými mesiacmi a cieľmi
+  const exported = [];
+  URL.createObjectURL = jest.fn(blob => { exported.push(blob); return 'blob:test'; });
+  URL.revokeObjectURL = jest.fn();
+  const linkClick = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  fireEvent.click(screen.getByText('Stiahnuť moje dáta'));
+  expect(exported).toHaveLength(1);
+  const exportedText = await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsText(exported[0]);
+  });
+  const exportedFile = JSON.parse(exportedText);
+  expect(exportedFile.email).toBe('test@test.sk');
+  expect(Object.keys(exportedFile.monthsData)).toContain(months[9].key);
+  expect(exportedFile.savingsGoals.map(goal => goal.name)).toContain('Dovolenka');
+  linkClick.mockRestore();
   fireEvent.click(screen.getByText('Odhlásiť sa'));
   await waitFor(() => expect(mockSignOut).toHaveBeenCalled()); // odhlási až po uložení
   log('Profil + odhlásenie OK');

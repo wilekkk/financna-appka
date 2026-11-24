@@ -6,6 +6,7 @@ import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData, DataConflictError } from './utils/db';
 import { markActivity, clearActivity, isInactiveTooLong } from './utils/inactivity';
 import { withUids, migrateGoalLinks, removeGoalEntriesFor } from './utils/goalLinks';
+import { buildExport, exportFileName, downloadJson } from './utils/exportData';
 import AuthScreen from './components/AuthScreen';
 import NewPasswordScreen from './components/NewPasswordScreen';
 import YearlyScreen from './components/YearlyScreen';
@@ -443,7 +444,8 @@ function App() {
   }
 
   if (screen === 'profile') {
-    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => logout()} />);
+    const handleExportData = () => downloadJson(exportFileName(), buildExport({ email: user.email, monthsData, savingsGoals, customCategories }));
+    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => logout()} onExportData={handleExportData} />);
   }
 
   if (screen === 'categories') {

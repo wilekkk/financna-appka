@@ -1,8 +1,8 @@
-import { ChevronLeft, LogOut } from 'lucide-react';
+import { ChevronLeft, LogOut, Download } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function ProfileScreen({ user, onBack, onLogout }) {
+export default function ProfileScreen({ user, onBack, onLogout, onExportData }) {
   const [firstName, setFirstName] = useState(user.user_metadata?.first_name ?? '');
   const [lastName, setLastName]   = useState(user.user_metadata?.last_name ?? '');
   const [saving, setSaving]       = useState(false);
@@ -61,6 +61,14 @@ export default function ProfileScreen({ user, onBack, onLogout }) {
           </button>
         </form>
       </div>
+
+      <section className="section">
+        <div className="section-head">
+          <h2 className="section-title">Tvoje dáta</h2>
+        </div>
+        <p className="profile-data-hint">Stiahni si všetky svoje transakcie, ciele a kategórie do jedného súboru (JSON).</p>
+        <button className="profile-action-row" onClick={onExportData}><Download size={18} strokeWidth={1.75} />Stiahnuť moje dáta</button>
+      </section>
 
       <section className="section">
         <button className="logout-row" onClick={onLogout}><LogOut size={18} strokeWidth={1.75} />Odhlásiť sa</button>
