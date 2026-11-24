@@ -34,6 +34,12 @@ export async function loadUserData(userId) {
   };
 }
 
+// Zmaže účet prihláseného používateľa aj všetky jeho dáta (funkcia delete_own_account v Supabase).
+export async function deleteOwnAccount() {
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) throw error;
+}
+
 // Uloží dáta a vráti nový čas uloženia.
 // expectedUpdatedAt = čas, ktorý appka naposledy videla v databáze. Ak sa medzitým zmenil
 // (uložilo iné zariadenie), dáta sa neprepíšu a funkcia vyhodí DataConflictError.

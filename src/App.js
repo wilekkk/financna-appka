@@ -3,7 +3,7 @@ import './App.css';
 import { supabase } from './supabaseClient';
 import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
-import { loadUserData, saveUserData, DataConflictError } from './utils/db';
+import { loadUserData, saveUserData, deleteOwnAccount, DataConflictError } from './utils/db';
 import { markActivity, clearActivity, isInactiveTooLong } from './utils/inactivity';
 import { withUids, migrateGoalLinks, removeGoalEntriesFor } from './utils/goalLinks';
 import { buildExport, exportFileName, downloadJson } from './utils/exportData';
@@ -53,7 +53,7 @@ function App() {
   const months = useMemo(() => generateMonths(year), [year]);
   const yearRange = getYearRange(monthsData, currentYear);
   const [dataConflict, setDataConflict]   = useState(false);
-  const [loggedOutForInactivity, setLoggedOutForInactivity] = useState(false);
+  const [logoutInfo, setLogoutInfo]       = useState(''); // hláška na prihlasovacej obrazovke po odhlásení
   const [guideReturnScreen, setGuideReturnScreen] = useState('settings'); // kam sa vrátiť z návodu
   const dataLoadedForUser = useRef(false);
   const [loadedUserId, setLoadedUserId]   = useState(null); // účet, ktorého dáta sú práve načítané
@@ -124,11 +124,27 @@ function App() {
     try {
       if ((await flushNow()) === 'error') return;
       clearActivity();
-      setLoggedOutForInactivity(true);
+      setLogoutInfo('Odhlásili sme ťa po hodine nečinnosti. Prihlás sa znova.');
       await supabase.auth.signOut();
     } finally {
       loggingOut.current = false;
     }
+  };
+
+  // Zmazanie účtu. Najprv zastaví ukladanie a počká na rozbehnuté uloženie, aby sa zmazané dáta
+  // neuložili späť. Ak sa zmazanie nepodarí, ukladanie znova zapne a chybu pošle ďalej (ukáže ju Profil).
+  const deleteAccount = async () => {
+    savingStopped.current = true;
+    await saveQueue.current;
+    try {
+      await deleteOwnAccount();
+    } catch (error) {
+      savingStopped.current = false;
+      throw error;
+    }
+    clearActivity();
+    setLogoutInfo('Tvoj účet a všetky dáta boli zmazané.');
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   // Prihlásenie zo Supabase. Session uloženú z minula prijmeme len vtedy, ak od poslednej
@@ -141,7 +157,7 @@ function App() {
       }
       if (session) {
         markActivity();
-        setLoggedOutForInactivity(false);
+        setLogoutInfo('');
       }
       setUser(session?.user ?? null);
     };
@@ -367,7 +383,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthScreen initialError={LINK_ERROR} initialInfo={loggedOutForInactivity ? 'Odhlásili sme ťa po hodine nečinnosti. Prihlás sa znova.' : ''} />;
+    return <AuthScreen initialError={LINK_ERROR} initialInfo={logoutInfo} />;
   }
 
   if (settingNewPassword) {
@@ -445,7 +461,7 @@ function App() {
 
   if (screen === 'profile') {
     const handleExportData = () => downloadJson(exportFileName(), buildExport({ email: user.email, monthsData, savingsGoals, customCategories }));
-    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => logout()} onExportData={handleExportData} />);
+    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => logout()} onExportData={handleExportData} onDeleteAccount={deleteAccount} />);
   }
 
   if (screen === 'categories') {

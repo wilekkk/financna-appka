@@ -1884,3 +1884,6 @@ select.goal-input {
   cursor: pointer;
 }
 .profile-action-row:hover { color: var(--accent); }
+.profile-action-row--danger { border-top: 0; color: var(--negative); }
+.profile-action-row--danger:hover { color: var(--negative); }
+.confirm-modal-ok:disabled { opacity: 0.45; cursor: not-allowed; }
