@@ -232,6 +232,9 @@ test('celá aplikácia funguje', async () => {
 
   // 6. Profil + odhlásenie
   fireEvent.click(screen.getByLabelText('Späť na nastavenia'));
+  fireEvent.click(screen.getByText('Ochrana súkromia'));
+  expect(screen.getByText(/na serveroch v EÚ, v Írsku/)).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('Späť'));
   fireEvent.click(screen.getByText('Profil'));
   expect(screen.getByDisplayValue('test@test.sk')).toBeTruthy();
   // export dát: stiahne súbor JSON so všetkými mesiacmi a cieľmi

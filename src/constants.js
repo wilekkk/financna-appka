@@ -44,3 +44,7 @@ export const BANK_STATEMENT_HELP = {
 export const CAT_MAP    = Object.fromEntries(CATS.map(c => [c.key, c]));
 export const SPLIT_INFO = { key: 'split', label: 'Rozdeliť', color: '#4C7DFF' };
 export const THRESHOLD  = 80;
+
+// Zásady ochrany súkromia: kto appku prevádzkuje a kam mu písať.
+// TODO pred spustením pre verejnosť: doplniť meno prevádzkovateľa a kontaktný email.
+export const PRIVACY_CONTACT = { operator: null, email: null, validFrom: '24.\u00a011.\u00a02026' };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { markActivity } from '../utils/inactivity';
+import PrivacyScreen from './PrivacyScreen';
 
 const RESET_SENT = 'Ak k tomuto emailu existuje účet, poslali sme naň odkaz na nastavenie nového hesla. Skontroluj aj spam.';
 
@@ -15,6 +16,7 @@ export default function AuthScreen({ initialError = '', initialInfo = '' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(initialError);
   const [info, setInfo]       = useState(initialInfo);
+  const [showPrivacy, setShowPrivacy] = useState(false); // zásady ochrany súkromia ešte pred prihlásením
 
   const switchMode = next => { setMode(next); setError(''); setInfo(''); };
 
@@ -49,6 +51,8 @@ export default function AuthScreen({ initialError = '', initialInfo = '' }) {
 
     setLoading(false);
   };
+
+  if (showPrivacy) return <PrivacyScreen onBack={() => setShowPrivacy(false)} />;
 
   return (
     <div className="auth-screen">
@@ -121,6 +125,10 @@ export default function AuthScreen({ initialError = '', initialInfo = '' }) {
           {error && <div className="auth-error">{error}</div>}
           {info  && <div className="auth-info">{info}</div>}
 
+          {mode === 'register' && (
+            <p className="auth-note">Registráciou berieš na vedomie <button type="button" className="text-btn auth-inline-link" onClick={() => setShowPrivacy(true)}>zásady ochrany súkromia</button>.</p>
+          )}
+
           <button className="auth-submit" type="submit" disabled={loading}>
             {loading ? 'Načítava…' : mode === 'login' ? 'Prihlásiť sa' : mode === 'register' ? 'Zaregistrovať sa' : 'Poslať odkaz'}
           </button>
@@ -128,6 +136,7 @@ export default function AuthScreen({ initialError = '', initialInfo = '' }) {
         {mode === 'reset' && (
           <button type="button" className="text-btn auth-link" onClick={() => switchMode('login')}>Späť na prihlásenie</button>
         )}
+        <button type="button" className="text-btn auth-link auth-privacy-link" onClick={() => setShowPrivacy(true)}>Ochrana súkromia</button>
       </div>
     </div>
   );

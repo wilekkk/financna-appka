@@ -1887,3 +1887,9 @@ select.goal-input {
 .profile-action-row--danger { border-top: 0; color: var(--negative); }
 .profile-action-row--danger:hover { color: var(--negative); }
 .confirm-modal-ok:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Prihlasovacia obrazovka: odkaz na zásady ochrany súkromia */
+.auth-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+.auth-inline-link { padding: 0; font-size: inherit; color: var(--accent); text-decoration: underline; }
+.auth-privacy-link { align-self: center; font-size: 13px; color: var(--ink-3); }
+.guide a { color: var(--accent); }

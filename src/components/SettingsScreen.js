@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-export default function SettingsScreen({ onOpenProfile, onOpenCategories, onOpenGuide }) {
+export default function SettingsScreen({ onOpenProfile, onOpenCategories, onOpenGuide, onOpenPrivacy }) {
   return (
     <div className="yearly-screen overview-screen">
       <header className="screen-header">
@@ -17,6 +17,10 @@ export default function SettingsScreen({ onOpenProfile, onOpenCategories, onOpen
         </button>
         <button className="settings-list-item" onClick={onOpenGuide}>
           <span>Ako používať appku</span>
+          <span className="settings-list-arrow"><ChevronRight size={18} /></span>
+        </button>
+        <button className="settings-list-item" onClick={onOpenPrivacy}>
+          <span>Ochrana súkromia</span>
           <span className="settings-list-arrow"><ChevronRight size={18} /></span>
         </button>
       </div>

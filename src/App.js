@@ -17,12 +17,13 @@ import SettingsScreen from './components/SettingsScreen';
 import ProfileScreen from './components/ProfileScreen';
 import CategoriesScreen from './components/CategoriesScreen';
 import GuideScreen from './components/GuideScreen';
+import PrivacyScreen from './components/PrivacyScreen';
 import BottomNav from './components/BottomNav';
 
 // Ktorá položka spodného menu svieti na ktorej obrazovke. Obrazovky bez položky menu nemajú.
 const NAV_FOR_SCREEN = {
   yearly: 'prehled', savings: 'sporenie', months: 'mesiace', results: 'mesiace',
-  settings: 'nastavenia', profile: 'nastavenia', categories: 'nastavenia', guide: 'nastavenia',
+  settings: 'nastavenia', profile: 'nastavenia', categories: 'nastavenia', guide: 'nastavenia', privacy: 'nastavenia',
 };
 const SCREEN_FOR_NAV = { prehled: 'yearly', sporenie: 'savings', mesiace: 'months', nastavenia: 'settings' };
 
@@ -452,7 +453,11 @@ function App() {
   }
 
   if (screen === 'settings') {
-    return withNav(<SettingsScreen onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} onOpenGuide={handleOpenGuide} />);
+    return withNav(<SettingsScreen onOpenProfile={() => setScreen('profile')} onOpenCategories={() => setScreen('categories')} onOpenGuide={handleOpenGuide} onOpenPrivacy={() => setScreen('privacy')} />);
+  }
+
+  if (screen === 'privacy') {
+    return withNav(<PrivacyScreen onBack={() => setScreen('settings')} />);
   }
 
   if (screen === 'guide') {

@@ -38,3 +38,14 @@ test('ukáže chybu z vypršaného odkazu', () => {
   render(<AuthScreen initialError="Odkaz na obnovu hesla vypršal alebo už bol použitý. Požiadaj o nový." />);
   expect(screen.getByText(/Odkaz na obnovu hesla vypršal/)).toBeTruthy();
 });
+
+test('zásady ochrany súkromia sú dostupné ešte pred prihlásením a pri registrácii', () => {
+  render(<AuthScreen />);
+  fireEvent.click(screen.getByText('Ochrana súkromia'));
+  expect(screen.getByRole('heading', { name: 'Ochrana súkromia' })).toBeTruthy();
+  expect(screen.getByText(/na serveroch v EÚ, v Írsku/)).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('Späť'));
+  fireEvent.click(screen.getByText('Registrácia'));
+  fireEvent.click(screen.getByText('zásady ochrany súkromia'));
+  expect(screen.getByRole('heading', { name: 'Ochrana súkromia' })).toBeTruthy();
+});
