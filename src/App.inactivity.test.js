@@ -67,6 +67,23 @@ test('návrat po hodine s neuloženou zmenou: najprv uloží, potom odhlási', a
   expect(mockSave.mock.invocationCallOrder[0]).toBeLessThan(mockSignOut.mock.invocationCallOrder[0]);
 });
 
+test('po hodine nečinnosti neodhlási, kým sa neuložené zmeny nepodarí uložiť', async () => {
+  mockSave.mockRejectedValue(new Error('Failed to fetch'));
+  render(<App />);
+  await screen.findByText('Čistý cashflow za rok');
+  nav('Sporenie');
+  fireEvent.click(screen.getByText('Nový cieľ'));
+  fireEvent.change(screen.getByPlaceholderText('Názov cieľa (napr. Dovolenka)'), { target: { value: 'Auto' } });
+  fireEvent.click(screen.getByText('Pridať'));
+
+  localStorage.setItem(KEY, longAgo());
+  act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+
+  expect(await screen.findByText(/Zmeny sa nepodarilo uložiť/)).toBeTruthy();
+  expect(mockSignOut).not.toHaveBeenCalled();
+  expect(screen.getByText('Auto')).toBeTruthy();
+});
+
 test('ťuknutie do appky zapíše aktivitu', async () => {
   render(<App />);
   await screen.findByText('Čistý cashflow za rok');

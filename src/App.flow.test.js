@@ -225,7 +225,7 @@ test('celá aplikácia funguje', async () => {
   fireEvent.click(screen.getByText('Profil'));
   expect(screen.getByDisplayValue('test@test.sk')).toBeTruthy();
   fireEvent.click(screen.getByText('Odhlásiť sa'));
-  expect(mockSignOut).toHaveBeenCalled();
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalled()); // odhlási až po uložení
   log('Profil + odhlásenie OK');
 
   // 7. Ukladanie do databázy

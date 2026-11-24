@@ -1824,3 +1824,31 @@ select.goal-input {
 .upload-help { margin-top: 16px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .upload-help summary { min-height: 32px; color: var(--accent); cursor: pointer; }
 .upload-help ol { margin: 4px 0 0; padding-left: 20px; }
+
+/* ── Pruh: zmeny sa nepodarilo uložiť ────────────────────────────────────── */
+
+.save-error-banner {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  border-bottom: 1px solid var(--warning);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.save-error-banner span { flex: 1; }
+.save-error-banner button {
+  flex-shrink: 0;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  color: var(--warning);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}

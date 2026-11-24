@@ -4,12 +4,13 @@ import App from './App';
 
 const mockLoad = jest.fn();
 const mockSave = jest.fn();
+const mockSignOut = jest.fn();
 jest.mock('./supabaseClient', () => ({
   supabase: {
     auth: {
       getSession: () => Promise.resolve({ data: { session: { user: { id: 'u1', email: 'test@test.sk' } } } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-      signOut: jest.fn(),
+      signOut: (...args) => mockSignOut(...args),
     },
   },
 }));
@@ -89,4 +90,51 @@ test('po návrate do appky nenačíta nič, kým nie je uložená posledná zmen
   act(() => { document.dispatchEvent(new Event('visibilitychange')); });
   expect(mockLoad).toHaveBeenCalledTimes(1);
   expect(screen.getByText('Auto')).toBeTruthy();
+});
+
+test('bez internetu appka funguje ďalej, ukáže pruh a po „Skúsiť teraz“ uloží', async () => {
+  mockLoad.mockResolvedValue(stored('t1'));
+  mockSave.mockRejectedValueOnce(new Error('Failed to fetch')).mockResolvedValue('t2');
+  await startOnSavings();
+  addGoal('Auto');
+  expect(await screen.findByText(/Zmeny sa nepodarilo uložiť/, {}, { timeout: 3000 })).toBeTruthy();
+  expect(screen.getByText('Auto')).toBeTruthy(); // appka ostala použiteľná
+  fireEvent.click(screen.getByText('Skúsiť teraz'));
+  await waitFor(() => expect(screen.queryByText(/Zmeny sa nepodarilo uložiť/)).toBeNull());
+  expect(mockSave).toHaveBeenCalledTimes(2);
+  expect(mockSave.mock.calls[1][2].map(goal => goal.name)).toEqual(['Auto']);
+}, 10000);
+
+test('odhlásenie hneď po zmene: najprv uloží, potom odhlási', async () => {
+  mockLoad.mockResolvedValue(stored('t1'));
+  mockSave.mockResolvedValue('t2');
+  await startOnSavings();
+  addGoal('Auto');
+  fireEvent.click(screen.getByLabelText('Odhlásiť sa'));
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+  expect(mockSave).toHaveBeenCalledTimes(1);
+  expect(mockSave.mock.invocationCallOrder[0]).toBeLessThan(mockSignOut.mock.invocationCallOrder[0]);
+});
+
+test('odhlásenie, keď sa zmena nedá uložiť: opýta sa a odhlási až po potvrdení', async () => {
+  mockLoad.mockResolvedValue(stored('t1'));
+  mockSave.mockRejectedValue(new Error('Failed to fetch'));
+  await startOnSavings();
+  addGoal('Auto');
+  fireEvent.click(screen.getByLabelText('Odhlásiť sa'));
+  expect(await screen.findByText('Zmeny nie sú uložené')).toBeTruthy();
+  expect(mockSignOut).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Odhlásiť aj tak'));
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+});
+
+test('pri skrytí appky (zamknutie mobilu) uloží hneď, nečaká sekundu', async () => {
+  mockLoad.mockResolvedValue(stored('t1'));
+  mockSave.mockResolvedValue('t2');
+  await startOnSavings();
+  addGoal('Auto');
+  const visibility = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+  visibility.mockRestore();
+  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1), { timeout: 500 });
 });

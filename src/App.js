@@ -43,7 +43,8 @@ function App() {
   const [customCategories, setCustomCategories] = useState(DEFAULT_SUBCATEGORIES);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [dataLoadError, setDataLoadError] = useState(null);
-  const [dataSaveError, setDataSaveError] = useState(null);
+  const [saveFailedAt, setSaveFailedAt]   = useState(null); // čas posledného neúspešného uloženia (null = všetko v poriadku)
+  const [confirmUnsavedLogout, setConfirmUnsavedLogout] = useState(false);
   const [settingNewPassword, setSettingNewPassword] = useState(OPENED_FROM_RECOVERY_LINK);
   const currentYear = new Date().getFullYear();
   const [year, setYear]                   = useState(currentYear);
@@ -84,17 +85,44 @@ function App() {
     setCustomCategories(synced.customCategories);
   };
 
+  // Hneď uloží aktuálne dáta (nečaká na 1 s). Vráti 'saved', 'conflict' alebo 'error'.
+  const flushNow = () => {
+    const { user: currentUser, monthsData: md, savingsGoals: sg, customCategories: cc } = latest.current;
+    if (!currentUser || !dataLoadedForUser.current) return Promise.resolve('saved');
+    return queueSave(currentUser.id, { monthsData: md, savingsGoals: sg, customCategories: cc });
+  };
+
+  // Odhlásenie tlačidlom. Najprv uloží poslednú zmenu. Ak sa to nepodarí (napr. bez internetu),
+  // opýta sa, či sa má odhlásiť aj tak, lebo neuložené zmeny by sa stratili.
+  const logout = async ({ force = false } = {}) => {
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    try {
+      setConfirmUnsavedLogout(false);
+      if (!force && (await flushNow()) === 'error') {
+        setConfirmUnsavedLogout(true);
+        return;
+      }
+      clearActivity();
+      await supabase.auth.signOut();
+    } finally {
+      loggingOut.current = false;
+    }
+  };
+
+  // Odhlásenie po hodine nečinnosti. Ak sa posledné zmeny nepodarilo uložiť, zatiaľ neodhlási,
+  // aby sa nestratili. Skúsi to znova pri ďalšej kontrole (raz za minútu), keď už budú uložené.
   const logoutForInactivity = async () => {
     if (loggingOut.current) return;
     loggingOut.current = true;
-    const { user: currentUser, monthsData: md, savingsGoals: sg, customCategories: cc } = latest.current;
-    if (currentUser && dataLoadedForUser.current) {
-      await queueSave(currentUser.id, { monthsData: md, savingsGoals: sg, customCategories: cc });
+    try {
+      if ((await flushNow()) === 'error') return;
+      clearActivity();
+      setLoggedOutForInactivity(true);
+      await supabase.auth.signOut();
+    } finally {
+      loggingOut.current = false;
     }
-    clearActivity();
-    setLoggedOutForInactivity(true);
-    await supabase.auth.signOut();
-    loggingOut.current = false;
   };
 
   // Prihlásenie zo Supabase. Session uloženú z minula prijmeme len vtedy, ak od poslednej
@@ -129,7 +157,8 @@ function App() {
     lastSynced.current = null;
     savingStopped.current = false;
     setDataLoadError(null);
-    setDataSaveError(null);
+    setSaveFailedAt(null);
+    setConfirmUnsavedLogout(false);
     setDataConflict(false);
     let cancelled = false;
 
@@ -148,36 +177,66 @@ function App() {
     return () => { cancelled = true; };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pridá uloženie do radu a vráti promise, ktorý skončí po uložení. Uloží len vtedy, ak sa dáta
-  // v databáze medzitým nezmenili. Inak ukáže hlášku a nič neprepíše.
+  // Pridá uloženie do radu a vráti promise s výsledkom: 'saved', 'conflict' alebo 'error'.
+  // Uloží len vtedy, ak sa dáta v databáze medzitým nezmenili. Inak ukáže hlášku a nič neprepíše.
+  // Pri inej chybe (napr. bez internetu) appka funguje ďalej a uloženie sa skúsi znova.
   const queueSave = (userId, snapshot) => {
     saveQueue.current = saveQueue.current.then(async () => {
-      if (savingStopped.current || isSynced(snapshot)) return; // po chybe už neukladáme, uložené netreba znova
+      if (savingStopped.current) return 'conflict'; // po konflikte už neukladáme
+      if (isSynced(snapshot)) return 'saved';      // uložené netreba znova
       try {
         const updatedAt = await saveUserData(userId, snapshot.monthsData, snapshot.savingsGoals, snapshot.customCategories, serverUpdatedAt.current);
         serverUpdatedAt.current = updatedAt ?? null;
         lastSynced.current = snapshot;
+        setSaveFailedAt(null);
+        return 'saved';
       } catch (error) {
-        savingStopped.current = true;
         if (error instanceof DataConflictError) {
+          savingStopped.current = true;
           setDataConflict(true);
-        } else {
-          console.error('Nepodarilo sa uložiť dáta:', error);
-          setDataSaveError(error);
+          return 'conflict';
         }
+        console.error('Nepodarilo sa uložiť dáta:', error);
+        setSaveFailedAt(Date.now());
+        return 'error';
       }
     });
     return saveQueue.current;
   };
 
-  // Automatické ukladanie 1 s po poslednej zmene.
+  // Automatické ukladanie 1 s po poslednej zmene. Po neúspešnom uložení to skúša znova každých 10 s.
   useEffect(() => {
-    if (!user || !dataLoadedForUser.current || dataLoadError || dataSaveError || dataConflict) return;
+    if (!user || !dataLoadedForUser.current || dataLoadError || dataConflict) return;
     const snapshot = { monthsData, savingsGoals, customCategories };
     if (isSynced(snapshot)) return;
-    const timer = setTimeout(() => queueSave(user.id, snapshot), 1000);
+    const timer = setTimeout(() => queueSave(user.id, snapshot), saveFailedAt ? 10_000 : 1000);
     return () => clearTimeout(timer);
-  }, [monthsData, savingsGoals, customCategories, user, dataLoadError, dataSaveError, dataConflict]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [monthsData, savingsGoals, customCategories, user, dataLoadError, saveFailedAt, dataConflict]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pred odchodom z appky (zamknutie mobilu, prepnutie alebo zatvorenie karty) uloží hneď,
+  // aby sa nestratila zmena z poslednej sekundy. Po návrate internetu uloží, čo čaká.
+  // Ak by sa zatvorením karty stratili neuložené zmeny, prehliadač sa najprv opýta.
+  useEffect(() => {
+    if (!user) return;
+    const onVisibility = () => { if (document.visibilityState === 'hidden') flushNow(); };
+    const onBeforeUnload = event => {
+      flushNow();
+      if (dataLoadedForUser.current && !savingStopped.current && !isSynced(latest.current)) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flushNow);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('online', flushNow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flushNow);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('online', flushNow);
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Odhlásenie po hodine nečinnosti. Kontroluje sa pri návrate do appky, raz za minútu
   // a pri ťuknutí sa zapíše čas aktivity. Neuložená zmena sa pred odhlásením ešte uloží.
@@ -289,14 +348,14 @@ function App() {
     return <NewPasswordScreen onDone={() => setSettingNewPassword(false)} />;
   }
 
-  if (dataLoadError || dataSaveError || dataConflict) {
+  if (dataLoadError || dataConflict) {
     return (
       <div className="auth-screen">
         <div className="auth-card">
           <div className="auth-loading">
             {dataConflict
               ? 'Dáta sa medzitým zmenili na inom zariadení. Obnov stránku, aby si videl najnovšiu verziu.'
-              : 'Dáta sa nepodarilo synchronizovať. Obnov stránku a skontroluj pripojenie.'}
+              : 'Dáta sa nepodarilo načítať. Skontroluj pripojenie a obnov stránku.'}
           </div>
           <div className="dialog-actions">
             <button className="dialog-cancel-btn" onClick={() => supabase.auth.signOut()}>Odhlásiť sa</button>
@@ -307,9 +366,34 @@ function App() {
     );
   }
 
+  // Pruh hore, keď sa zmeny nepodarilo uložiť, a otázka pred odhlásením s neuloženými zmenami.
+  const saveNotices = (
+    <>
+      {saveFailedAt && (
+        <div className="save-error-banner" role="alert">
+          <span>Zmeny sa nepodarilo uložiť. Skontroluj internet, skúšam to znova.</span>
+          <button type="button" onClick={flushNow}>Skúsiť teraz</button>
+        </div>
+      )}
+      {confirmUnsavedLogout && (
+        <div className="confirm-overlay" onClick={() => setConfirmUnsavedLogout(false)}>
+          <div className="confirm-modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <h3 className="confirm-modal-title">Zmeny nie sú uložené</h3>
+            <p className="confirm-modal-text">Posledné zmeny sa nepodarilo uložiť. Ak sa teraz odhlásiš, stratia sa.</p>
+            <div className="confirm-modal-actions">
+              <button className="confirm-modal-cancel" onClick={() => setConfirmUnsavedLogout(false)}>Zostať</button>
+              <button className="confirm-modal-ok" style={{ background: 'var(--negative)' }} onClick={() => logout({ force: true })}>Odhlásiť aj tak</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   const nav = NAV_FOR_SCREEN[screen];
   const withNav = content => (
     <>
+      {saveNotices}
       {content}
       <BottomNav active={nav} onNavigate={key => setScreen(SCREEN_FOR_NAV[key])} />
     </>
@@ -318,7 +402,7 @@ function App() {
   const yearSwitch = { year, minYear: yearRange.min, maxYear: yearRange.max, onChangeYear: setYear };
 
   if (screen === 'yearly' || screen === 'savings') {
-    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} {...yearSwitch} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenGuide={handleOpenGuide} isNewUser={dataLoadedForUser.current && Object.keys(monthsData).length === 0} onSelectMonth={handleSelect} user={user} onLogout={() => supabase.auth.signOut()} />);
+    return withNav(<YearlyScreen tab={screen === 'savings' ? 'sporenie' : 'prehled'} {...yearSwitch} months={months} monthsData={monthsData} customCategories={customCategories} savingsGoals={savingsGoals} onAddGoal={handleAddGoal} onUpdateGoal={handleUpdateGoal} onDeleteGoal={handleDeleteGoal} onOpenMonths={() => setScreen('months')} onOpenGuide={handleOpenGuide} isNewUser={dataLoadedForUser.current && Object.keys(monthsData).length === 0} onSelectMonth={handleSelect} user={user} onLogout={() => logout()} />);
   }
 
   if (screen === 'settings') {
@@ -330,7 +414,7 @@ function App() {
   }
 
   if (screen === 'profile') {
-    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => supabase.auth.signOut()} />);
+    return withNav(<ProfileScreen user={user} onBack={() => setScreen('settings')} onLogout={() => logout()} />);
   }
 
   if (screen === 'categories') {
@@ -346,6 +430,8 @@ function App() {
     const existingData = monthsData[selectedMonth?.key];
     const hasExisting  = existingData && (existingData.history?.length > 0 || existingData.creditHistory?.length > 0);
     return (
+      <>
+      {saveNotices}
       <MonthSwipeScreen
         month={selectedMonth}
         existingHistory={existingData?.history || []}
@@ -353,6 +439,7 @@ function App() {
         onComplete={handleComplete}
         onBack={() => setScreen(hasExisting ? 'results' : 'months')}
       />
+      </>
     );
   }
 
