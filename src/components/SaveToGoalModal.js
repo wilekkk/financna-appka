@@ -63,7 +63,10 @@ export default function SaveToGoalModal({ transaction, savingsAmount, goals: all
           {goals.map(g => {
             const sel = selections[g.id];
             if (!sel) return null;
-            const allocated = (g.allocations || []).reduce((s, a) => s + a.amount, 0);
+            // Koľko je v cieli teraz: vklady mínus výbery a presuny do iných cieľov (ako na karte cieľa).
+            const allocated = Math.max(0,
+              (g.allocations || []).reduce((s, a) => s + a.amount, 0)
+              - (g.withdrawals || []).reduce((s, w) => s + w.amount, 0));
             return (
               <div key={g.id} className={`stg-goal-row${sel.selected ? ' stg-goal-row--active' : ''}`}>
                 <label className="stg-goal-label">
