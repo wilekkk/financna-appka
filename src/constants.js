@@ -39,6 +39,15 @@ export const BANK_STATEMENT_HELP = {
       'Stiahnutý súbor nahraj do appky.',
     ],
   },
+  vub: {
+    label: 'VÚB',
+    from: 'z VÚB',
+    steps: [
+      'V internet bankingu VÚB otvor pohyby na účte za jeden mesiac a exportuj ich do Excelu (.xls).',
+      'Ak platíš kreditnou kartou, otvor aj transakcie karty za ten istý mesiac a tiež ich exportuj.',
+      'Oba súbory nahraj do toho istého mesiaca, každý zvlášť. Splátky kreditnej karty z výpisu účtu appka vynechá, aby sa výdavky nerátali dvakrát.',
+    ],
+  },
 };
 
 export const CAT_MAP    = Object.fromEntries(CATS.map(c => [c.key, c]));

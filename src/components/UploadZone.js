@@ -1,27 +1,32 @@
 import { FileUp, TriangleAlert } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { parseCSV, parseRevolutCSV, describeSkipped, CsvFormatError } from '../utils/csv';
+import { parseVubFile } from '../utils/vub';
 import { BANK_STATEMENT_HELP } from '../constants';
 
-// Každá banka má vlastný formát výpisu aj kódovanie súboru. Ak sa výpis v prvom kódovaní
-// nedá prečítať (chýba stĺpec), skúsi sa ďalšie.
+// Každá banka má vlastný formát výpisu. CSV (Tatra, Revolut) sa číta ako text v danom kódovaní;
+// ak sa v prvom kódovaní nedá prečítať (chýba stĺpec), skúsi sa ďalšie. VÚB posiela súbor Excel (.xls),
+// ten sa číta ako binárny súbor.
 const BANKS = {
-  tatra:   { label: 'Tatra banka', from: 'z Tatra banky', parse: parseCSV,        encodings: ['windows-1250', 'utf-8'] },
-  revolut: { label: 'Revolut',     from: 'z Revolutu',    parse: parseRevolutCSV, encodings: ['utf-8'] },
+  tatra:   { label: 'Tatra banka', from: 'z Tatra banky', file: 'CSV', accept: '.csv', parse: parseCSV,        encodings: ['windows-1250', 'utf-8'] },
+  revolut: { label: 'Revolut',     from: 'z Revolutu',    file: 'CSV', accept: '.csv', parse: parseRevolutCSV, encodings: ['utf-8'] },
+  vub:     { label: 'VÚB',         from: 'z VÚB',         file: 'XLS', accept: '.xls,.xlsx', parseBinary: parseVubFile },
 };
 
-const readText = (file, encoding) => new Promise((resolve, reject) => {
+const readFile = (file, encoding) => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.onload = e => resolve(e.target.result);
   reader.onerror = () => reject(new Error('Súbor sa nepodarilo prečítať.'));
-  reader.readAsText(file, encoding);
+  if (encoding) reader.readAsText(file, encoding);
+  else reader.readAsArrayBuffer(file);
 });
 
 // Prečíta výpis. Chyba formátu v poslednom kódovaní sa pošle ďalej, inak sa skúsi ďalšie kódovanie.
-async function parseFile(file, { parse, encodings }) {
+async function parseFile(file, { parse, parseBinary, encodings }) {
+  if (parseBinary) return parseBinary(await readFile(file));
   for (let i = 0; i < encodings.length; i++) {
     try {
-      return parse(await readText(file, encodings[i]));
+      return parse(await readFile(file, encodings[i]));
     } catch (err) {
       if (!(err instanceof CsvFormatError) || i === encodings.length - 1) throw err;
     }
@@ -47,7 +52,7 @@ export default function UploadZone({ onLoad }) {
       if (notes.length) setReview({ transactions, notes });
       else onLoad(transactions);
     } catch (err) {
-      setError(`${err.message} Skontroluj, či je to CSV výpis ${from}.`);
+      setError(`${err.message} Skontroluj, či je to ${BANKS[bank].file} výpis ${from}.`);
     }
   };
 
@@ -88,9 +93,9 @@ export default function UploadZone({ onLoad }) {
         onDrop={e => { e.preventDefault(); setDropping(false); handleFile(e.dataTransfer.files[0]); }}
       >
         <div className="upload-icon"><FileUp size={36} strokeWidth={1.5} /></div>
-        <p className="upload-label">Nahraj CSV výpis {BANKS[bank].from}</p>
+        <p className="upload-label">Nahraj {BANKS[bank].file} výpis {BANKS[bank].from}</p>
         <p className="upload-sub">Klikni alebo pretiahni súbor sem</p>
-        <input ref={inputRef} type="file" accept=".csv" style={{ display: 'none' }}
+        <input ref={inputRef} type="file" accept={BANKS[bank].accept} style={{ display: 'none' }}
                onChange={e => { handleFile(e.target.files[0]); e.target.value = ''; }} />
       </div>
       <details className="upload-help">

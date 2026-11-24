@@ -14,7 +14,7 @@ export default function GuideScreen({ onBack }) {
       <div className="guide">
         <section className="section">
           <h2 className="section-title">1. Stiahni výpis z banky</h2>
-          <p>Appka pracuje s výpisom z účtu vo formáte CSV, vždy za jeden mesiac.</p>
+          <p>Appka pracuje s výpisom z účtu za jeden mesiac: z Tatra banky a Revolutu vo formáte CSV, z VÚB vo formáte Excel (.xls).</p>
           {Object.entries(BANK_STATEMENT_HELP).map(([key, bank]) => (
             <div key={key}>
               <h3 className="subsection-title">{bank.label}</h3>

@@ -59,3 +59,20 @@ test('súbor bez potrebných stĺpcov: povie, ktorý stĺpec chýba', async () =
   expect(await screen.findByText(/Vo výpise chýba stĺpec „Dátum spracovania“. Skontroluj, či je to CSV výpis z Tatra banky./)).toBeTruthy();
   expect(onLoad).not.toHaveBeenCalled();
 });
+
+test('VÚB: prijíma súbory Excel a pomoc hovorí o výpise z účtu aj z karty', () => {
+  render(<UploadZone onLoad={jest.fn()} />);
+  fireEvent.click(screen.getByText('VÚB'));
+  expect(screen.getByText('Nahraj XLS výpis z VÚB')).toBeTruthy();
+  expect(document.querySelector('input[type="file"]').getAttribute('accept')).toBe('.xls,.xlsx');
+  expect(screen.getByText(/Splátky kreditnej karty z výpisu účtu appka vynechá/)).toBeTruthy();
+});
+
+test('VÚB: súbor, ktorý nie je výpis z VÚB, ukáže chybu', async () => {
+  const onLoad = jest.fn();
+  render(<UploadZone onLoad={onLoad} />);
+  fireEvent.click(screen.getByText('VÚB'));
+  upload('Meno,Priezvisko\nJano,Novák\n');
+  expect(await screen.findByText(/Skontroluj, či je to XLS výpis z VÚB/)).toBeTruthy();
+  expect(onLoad).not.toHaveBeenCalled();
+});

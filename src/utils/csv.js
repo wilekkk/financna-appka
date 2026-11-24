@@ -39,6 +39,7 @@ export const SKIP_REASONS = {
   currency:     'platby v inej mene ako EUR',
   failed:       'zrušené alebo zamietnuté platby',
   zero:         'pohyby s nulovou sumou',
+  cardRepayment: 'splátky kreditnej karty (výdavky z karty nahraj z výpisu karty, aby sa nerátali dvakrát)',
 };
 
 // "3 × platby v inej mene ako EUR" pre každý dôvod s aspoň jedným riadkom.
