@@ -118,6 +118,8 @@ test('celá aplikácia funguje', async () => {
   log('Dni v mesiaci:', days.join(' | '));
   expect(days[0]).toMatch(/31\. októbra−86,40 €/);
   expect(screen.getByText(/Needs 70/)).toBeTruthy();
+  // percentá kategórií nad pruhom: Needs 123,43 / Wants 61,87 / Savings 200 z 385,30 €
+  expect(norm(document.querySelector('.month-cats-pcts'))).toBe('Needs 32 %Wants 16,1 %Savings 51,9 %');
 
   // šípky mesiacov
   expect(screen.getByLabelText('Nasledujúci mesiac').disabled).toBe(true);

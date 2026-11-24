@@ -4,7 +4,7 @@ import TransactionTable from './TransactionTable';
 import DashboardTab from './DashboardTab';
 import { calcMonthTotals, getRemainingAmount } from '../utils/finance';
 import { CAT_MAP } from '../constants';
-import { formatMoney } from '../utils/format';
+import { formatMoney, formatPercent } from '../utils/format';
 import Money from './Money';
 import AddTransactionModal from './AddTransactionModal';
 import { linkedGoalEntries, removeGoalEntriesFor, describeGoalEntries } from '../utils/goalLinks';
@@ -184,6 +184,11 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
 
       {totalExpenses > 0 && (
         <section className="month-cats">
+          <div className="month-cats-pcts">
+            {categories.map(c => (
+              <span key={c.key} style={{ color: c.color }}>{c.label} {formatPercent((c.value / totalExpenses) * 100)} %</span>
+            ))}
+          </div>
           <div className="cat-bar cat-bar--thin" aria-hidden="true">
             {categories.filter(c => c.value > 0).map(c => (
               <span key={c.key} style={{ flexGrow: c.value, background: c.color }} />

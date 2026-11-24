@@ -1272,6 +1272,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .month-cats-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+/* Percentá Needs / Wants / Savings nad pruhom v detaile mesiaca */
+.month-cats-pcts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
 
 .month-tabs { margin: 28px 0 0; align-items: flex-end; }
 .month-tabs-actions { margin-left: auto; display: flex; gap: 16px; padding-bottom: 10px; }
