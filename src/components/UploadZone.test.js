@@ -17,7 +17,7 @@ test('po výbere Revolutu nahrá revolutový výpis aj s diakritikou', async () 
 
   await waitFor(() => expect(onLoad).toHaveBeenCalled());
   expect(onLoad.mock.calls[0][0]).toEqual([
-    { id: 1, store: 'Ještě Jednu', amount: -3.21, date: '03.10.2026', typ: 'debet' },
+    { id: 1, store: 'Ještě Jednu', amount: -3.21, date: '03.10.2026', started: '02.10.2026', typ: 'debet' },
   ]);
 });
 

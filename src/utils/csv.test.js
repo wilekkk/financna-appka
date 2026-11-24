@@ -10,7 +10,7 @@ describe('parseRevolutCSV', () => {
     const [tx] = revolutTxs(revolut([
       'Card Payment,Current,2026-09-30 18:49:05,2026-10-01 15:38:51,Albert,-4.30,0.00,EUR,COMPLETED,109.73',
     ]));
-    expect(tx).toEqual({ id: 1, store: 'Albert', amount: -4.3, date: '01.10.2026', typ: 'debet' });
+    expect(tx).toEqual({ id: 1, store: 'Albert', amount: -4.3, date: '01.10.2026', started: '30.09.2026', typ: 'debet' });
   });
 
   test('pripočíta poplatok k výdavku', () => {

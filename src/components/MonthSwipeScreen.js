@@ -3,8 +3,7 @@ import { useState, useRef } from 'react';
 import UploadZone from './UploadZone';
 import SwipeCard from './SwipeCard';
 import SplitModal from './SplitModal';
-
-const txKey = t => `${t.date}|${t.store}|${t.amount}`;
+import { findNewTransactions } from '../utils/duplicates';
 
 export default function MonthSwipeScreen({ month, existingHistory = [], existingCreditHistory = [], onComplete, onBack }) {
   const [subScreen, setSubScreen]     = useState('upload');
@@ -13,16 +12,27 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
   const [index, setIndex]             = useState(0);
   const [flash, setFlash]             = useState(null);
   const [showSplit, setShowSplit]     = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState(null); // { fresh, duplicates }: čaká na potvrdenie
   const historyRef = useRef([]);
   const year = month.key.slice(0, 4);
 
+  // Po nahratí výpisu: transakcie, ktoré už v mesiaci sú, sa preskočia. Ak nejaké boli,
+  // appka to najprv povie a pokračuje až po potvrdení.
   const handleLoad = (transactions) => {
-    const existingDebitKeys  = new Set(existingHistory.map(h => txKey(h.transaction)));
-    const existingCreditKeys = new Set(existingCreditHistory.map(h => txKey(h.transaction)));
+    const existing = [...existingHistory, ...existingCreditHistory].map(h => h.transaction);
+    const result = findNewTransactions(existing, transactions);
+    if (result.duplicates > 0) {
+      setDuplicateInfo(result);
+      setSubScreen('duplicates');
+    } else {
+      startSorting(result.fresh);
+    }
+  };
 
-    const debits = transactions.filter(t => t.typ === 'debet'  && !existingDebitKeys.has(txKey(t)));
+  const startSorting = (transactions) => {
+    const debits = transactions.filter(t => t.typ === 'debet');
     const newCredits = transactions
-      .filter(t => t.typ === 'kredit' && !existingCreditKeys.has(txKey(t)))
+      .filter(t => t.typ === 'kredit')
       .map(t => ({ transaction: t, category: 'prijem', splits: null }));
 
     historyRef.current = [];
@@ -51,6 +61,37 @@ export default function MonthSwipeScreen({ month, existingHistory = [], existing
 
   const handleSwipe        = dir => advance({ transaction: debitList[index], category: dir, splits: null });
   const handleSplitConfirm = sp  => { setShowSplit(false); advance({ transaction: debitList[index], category: 'split', splits: sp }); };
+
+  if (subScreen === 'duplicates' && duplicateInfo) {
+    const { fresh, duplicates } = duplicateInfo;
+    const plural = n => n === 1 ? 'transakciu' : n < 5 ? 'transakcie' : 'transakcií';
+    return (
+      <div className="yearly-screen detail-screen">
+        <header className="detail-header">
+          <button className="icon-btn icon-btn--start" onClick={onBack} aria-label="Späť"><ChevronLeft size={22} strokeWidth={1.75} /></button>
+          <h1 className="screen-title">{month.label} {year}</h1>
+          <span />
+        </header>
+        <div className="upload-review" role="status">
+          {fresh.length > 0 ? <>
+            <p className="upload-review-title">Nových: {fresh.length} {plural(fresh.length)}</p>
+            <p className="upload-review-text">{duplicates} {plural(duplicates)} z výpisu už v tomto mesiaci máš, tie preskočíme.</p>
+          </> : <>
+            <p className="upload-review-title">Nič nové sme nepridali</p>
+            <p className="upload-review-text">Všetky transakcie z výpisu ({duplicates}) už v tomto mesiaci máš.</p>
+          </>}
+          <div className="dialog-actions">
+            <button type="button" className="dialog-cancel-btn" onClick={() => { setDuplicateInfo(null); setSubScreen('upload'); }}>
+              {fresh.length > 0 ? 'Zrušiť' : 'Nahrať iný výpis'}
+            </button>
+            {fresh.length > 0
+              ? <button type="button" className="primary-action-btn" onClick={() => startSorting(fresh)}>Pokračovať</button>
+              : <button type="button" className="primary-action-btn" onClick={onBack}>Späť</button>}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (subScreen === 'upload') {
     return (

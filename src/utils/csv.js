@@ -113,11 +113,13 @@ export function parseRevolutCSV(text) {
     // Poplatok Revolut strháva navyše, takže skutočná suma = Amount - Fee. Prázdny poplatok = 0.
     const parsed = parseAmount(amountRaw);
     const fee = feeRaw.trim() ? parseAmount(feeRaw) : 0;
-    const date = revolutDate(completed) || revolutDate(started); // PENDING ešte nemá Completed Date
+    const startedDate = revolutDate(started);
+    const date = revolutDate(completed) || startedDate; // PENDING ešte nemá Completed Date
     if (Number.isNaN(parsed) || Number.isNaN(fee) || !date) return skip('invalid');
     const amount = Math.round((parsed - Math.abs(fee)) * 100) / 100;
     if (amount === 0) return skip('zero');
-    return [{ id: i + 1, store: description || '(neznámy)', amount, date, typ: amount < 0 ? 'debet' : 'kredit' }];
+    // started = dátum začatia, podľa neho sa spozná tá istá platba pred dokončením aj po ňom
+    return [{ id: i + 1, store: description || '(neznámy)', amount, date, ...(startedDate && { started: startedDate }), typ: amount < 0 ? 'debet' : 'kredit' }];
   });
   return { transactions, skipped };
 }
