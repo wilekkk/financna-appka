@@ -54,6 +54,7 @@ function App() {
   const [loggedOutForInactivity, setLoggedOutForInactivity] = useState(false);
   const [guideReturnScreen, setGuideReturnScreen] = useState('settings'); // kam sa vrátiť z návodu
   const dataLoadedForUser = useRef(false);
+  const [loadedUserId, setLoadedUserId]   = useState(null); // účet, ktorého dáta sú práve načítané
   // Synchronizácia s databázou:
   // serverUpdatedAt = čas posledného uloženia, ktorý appka pozná (verzia dát v databáze),
   // lastSynced = dáta, ktoré sú práve také isté ako v databáze (nič neuložené),
@@ -147,14 +148,29 @@ function App() {
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Po odhlásení alebo zmene účtu zahodí dáta z pamäte, aby ich ďalší účet na tomto zariadení
+  // nevidel, a začne od Prehľadu. Kým sa nenačítajú dáta nového účtu, ukazuje sa „Načítava...“.
+  const clearDataFromMemory = () => {
+    dataLoadedForUser.current = false;
+    lastSynced.current = null;
+    serverUpdatedAt.current = null;
+    setLoadedUserId(null);
+    setMonthsData({});
+    setSavingsGoals([]);
+    setCustomCategories(DEFAULT_SUBCATEGORIES);
+    setSelectedMonth(null);
+    setSelectedSubcategory(null);
+    setScreen('yearly');
+    setYear(currentYear);
+  };
+
   // Load data after login
   useEffect(() => {
     if (!user) {
-      dataLoadedForUser.current = false;
+      if (dataLoadedForUser.current || loadedUserId) clearDataFromMemory();
       return;
     }
-    dataLoadedForUser.current = false;
-    lastSynced.current = null;
+    clearDataFromMemory();
     savingStopped.current = false;
     setDataLoadError(null);
     setSaveFailedAt(null);
@@ -167,6 +183,7 @@ function App() {
         if (cancelled) return;
         applyLoadedData(loaded);
         dataLoadedForUser.current = true;
+        setLoadedUserId(user.id);
       })
       .catch(error => {
         if (cancelled) return;
@@ -364,6 +381,10 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  if (loadedUserId !== user.id) {
+    return <div className="auth-screen"><div className="auth-loading">Načítava...</div></div>;
   }
 
   // Pruh hore, keď sa zmeny nepodarilo uložiť, a otázka pred odhlásením s neuloženými zmenami.
