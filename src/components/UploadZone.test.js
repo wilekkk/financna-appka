@@ -36,3 +36,26 @@ test('pri zlej banke ukáže chybu s názvom vybranej banky', async () => {
   expect(await screen.findByText(/Skontroluj, či je to CSV výpis z Revolutu/)).toBeTruthy();
   expect(onLoad).not.toHaveBeenCalled();
 });
+
+test('keď sa niečo vynechá, ukáže súhrn a pokračuje až po potvrdení', async () => {
+  const onLoad = jest.fn();
+  render(<UploadZone onLoad={onLoad} />);
+  fireEvent.click(screen.getByText('Revolut'));
+  upload('Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance\n'
+    + 'Card Payment,Current,2026-10-02 15:50:19,2026-10-03 14:37:38,Albert,-3.21,0.00,EUR,COMPLETED,86.09\n'
+    + 'Card Payment,Current,2026-10-04 10:00:00,2026-10-04 10:00:00,Shop,-10.00,0.00,USD,COMPLETED,0\n');
+
+  expect(await screen.findByText('Našli sme 1 transakciu.')).toBeTruthy();
+  expect(screen.getByText('1 × platby v inej mene ako EUR')).toBeTruthy();
+  expect(onLoad).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Pokračovať'));
+  expect(onLoad.mock.calls[0][0].map(t => t.store)).toEqual(['Albert']);
+});
+
+test('súbor bez potrebných stĺpcov: povie, ktorý stĺpec chýba', async () => {
+  const onLoad = jest.fn();
+  render(<UploadZone onLoad={onLoad} />);
+  upload('Datum,Castka\n03.11.2026,12\n');
+  expect(await screen.findByText(/Vo výpise chýba stĺpec „Dátum spracovania“. Skontroluj, či je to CSV výpis z Tatra banky./)).toBeTruthy();
+  expect(onLoad).not.toHaveBeenCalled();
+});
