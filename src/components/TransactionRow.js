@@ -5,6 +5,7 @@ import { getRemainingAmount } from '../utils/finance';
 import { formatMoney, formatNumber, formatPercent } from '../utils/format';
 import SaveToGoalModal from './SaveToGoalModal';
 import WithdrawFromGoalModal from './WithdrawFromGoalModal';
+import { isLinkedTo, linkedGoalEntries, describeGoalEntries } from '../utils/goalLinks';
 
 function getBubbleAmounts(item) {
   const abs = getRemainingAmount(item);
@@ -69,7 +70,7 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
 
   const txAllocations = savingsGoals.flatMap(g =>
     (g.allocations || [])
-      .filter(a => a.store === item.transaction.store && a.date === item.transaction.date)
+      .filter(a => isLinkedTo(a, item))
       .map(a => ({ goalName: g.name, amount: a.amount }))
   );
   const totalAllocatedForTx = txAllocations.reduce((s, a) => s + a.amount, 0);
@@ -79,7 +80,7 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
   // Withdrawal logic (credit transactions)
   const txWithdrawals = savingsGoals.flatMap(g =>
     (g.withdrawals || [])
-      .filter(w => w.store === item.transaction.store && w.date === item.transaction.date)
+      .filter(w => isLinkedTo(w, item))
       .map(w => ({ goalId: g.id, goalName: g.name, amount: w.amount, withdrawalId: w.id }))
   );
   const goalsHaveBalance      = savingsGoals.some(g => {
@@ -88,6 +89,9 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
     return net > 0.005;
   });
   const showWithdrawBtn = isCredit && (txWithdrawals.length > 0 || goalsHaveBalance);
+  const deleteGoalNote  = confirmDelete ? describeGoalEntries(linkedGoalEntries(savingsGoals, [item]), formatMoney) : '';
+  // Priradenie k cieľu si pamätá číslo tejto transakcie.
+  const txLink = txRef => ({ ...txRef, txUid: item.uid });
   const subcategories = customCategories.filter(category => category.type === (isCredit ? 'income' : 'expense'));
   const assignedSubcategory = item.subcategory;
 
@@ -205,7 +209,10 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
 
       {editMode && confirmDelete && (
         <div className="tx-confirm">
-          <span className="tx-confirm-label">Naozaj vymazať?</span>
+          <span className="tx-confirm-label">
+            Naozaj vymazať?
+            {deleteGoalNote && <span className="tx-confirm-note">{deleteGoalNote}</span>}
+          </span>
           <button className="tx-confirm-yes" onClick={() => onDelete(item._type, item._idx)}>Áno</button>
           <button className="tx-confirm-no" onClick={() => setConfirmDelete(false)}>Nie</button>
         </div>
@@ -255,7 +262,7 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
           transaction={item.transaction}
           savingsAmount={remainingForTx}
           goals={savingsGoals}
-          onConfirm={(allocs, txRef) => { onAllocateToGoal(allocs, txRef); setShowGoalModal(false); }}
+          onConfirm={(allocs, txRef) => { onAllocateToGoal(allocs, txLink(txRef)); setShowGoalModal(false); }}
           onCancel={() => setShowGoalModal(false)}
           onAddGoal={onAddGoal}
         />
@@ -278,7 +285,7 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
           maxAmount={abs}
           goals={savingsGoals}
           existingWithdrawals={txWithdrawals}
-          onConfirm={(diff, txRef) => { onWithdrawalsChanged(diff, txRef); setShowWithdrawModal(false); }}
+          onConfirm={(diff, txRef) => { onWithdrawalsChanged(diff, txLink(txRef)); setShowWithdrawModal(false); }}
           onCancel={() => setShowWithdrawModal(false)}
         />
       )}

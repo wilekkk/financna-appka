@@ -7,6 +7,7 @@ import { CAT_MAP } from '../constants';
 import { formatMoney } from '../utils/format';
 import Money from './Money';
 import AddTransactionModal from './AddTransactionModal';
+import { linkedGoalEntries, removeGoalEntriesFor, describeGoalEntries } from '../utils/goalLinks';
 
 export default function ResultsScreen({ month, history, creditHistory, savingsGoals, customCategories, selectedSubcategory, onSelectSubcategory, onClearSubcategory, onUpdateHistory, onUpdateCreditHistory, onUpdateGoal, onAddGoal, onAddMore, onReset, onBack, onPrevMonth, onNextMonth }) {
   const [tab, setTab]                         = useState('table');
@@ -41,6 +42,13 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
     } else {
       onUpdateCreditHistory(creditHistory.filter((_, i) => i !== idx));
       if (item?.clearing) onUpdateHistory(removeClearing(history));
+    }
+    // Spolu s transakciou sa z cieľov odoberie aj jej priradenie alebo výber.
+    if (item) {
+      const nextGoals = removeGoalEntriesFor(savingsGoals, [item]);
+      nextGoals.forEach((goal, i) => {
+        if (goal !== savingsGoals[i]) onUpdateGoal(goal.id, { allocations: goal.allocations, withdrawals: goal.withdrawals });
+      });
     }
   };
 
@@ -135,6 +143,9 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
     }
   };
 
+  const resetGoalNote = showResetConfirm
+    ? describeGoalEntries(linkedGoalEntries(savingsGoals, [...history, ...creditHistory]), formatMoney)
+    : '';
   const { totalIncome, totalExpenses, catTotals } = calcMonthTotals(history, creditHistory);
   const net = totalIncome - totalExpenses;
   const categories = ['needs', 'wants', 'savings'].map(key => ({ key, ...CAT_MAP[key], value: catTotals[key] }));
@@ -228,6 +239,7 @@ export default function ResultsScreen({ month, history, creditHistory, savingsGo
             <div className="confirm-modal-icon"><RotateCcw size={28} strokeWidth={1.5} /></div>
             <h3 className="confirm-modal-title">Resetovať mesiac?</h3>
             <p className="confirm-modal-text">Vymažú sa všetky transakcie za {month.label}. Budete môcť nahrať výpis znovu.</p>
+            {resetGoalNote && <p className="confirm-modal-text">{resetGoalNote}</p>}
             <div className="confirm-modal-actions">
               <button className="confirm-modal-cancel" onClick={() => setShowResetConfirm(false)}>Zrušiť</button>
               <button className="confirm-modal-ok" style={{ background: 'var(--negative)' }} onClick={() => { setShowResetConfirm(false); onReset(); }}>Vymazať</button>

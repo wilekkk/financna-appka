@@ -5,6 +5,7 @@ import { generateMonths, getYearRange, shiftMonth } from './utils/finance';
 import { DEFAULT_SUBCATEGORIES } from './constants';
 import { loadUserData, saveUserData, DataConflictError } from './utils/db';
 import { markActivity, clearActivity, isInactiveTooLong } from './utils/inactivity';
+import { withUids, migrateGoalLinks, removeGoalEntriesFor } from './utils/goalLinks';
 import AuthScreen from './components/AuthScreen';
 import NewPasswordScreen from './components/NewPasswordScreen';
 import YearlyScreen from './components/YearlyScreen';
@@ -74,9 +75,12 @@ function App() {
     && data.customCategories === lastSynced.current.customCategories;
 
   const applyLoadedData = loaded => {
+    // Starším dátam doplní čísla transakcií a prepojí ciele s transakciami. Výsledok je pri
+    // každom načítaní rovnaký, takže sa uloží až spolu s ďalšou zmenou.
+    const migrated = migrateGoalLinks(loaded.monthsData, loaded.savingsGoals);
     const synced = {
-      monthsData: loaded.monthsData,
-      savingsGoals: loaded.savingsGoals,
+      monthsData: migrated.monthsData,
+      savingsGoals: migrated.savingsGoals,
       customCategories: loaded.customCategories ?? DEFAULT_SUBCATEGORIES,
     };
     serverUpdatedAt.current = loaded.updatedAt ?? null;
@@ -308,7 +312,10 @@ function App() {
     return () => document.removeEventListener('visibilitychange', refresh);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reset mesiaca vymaže jeho transakcie aj ich priradenia k cieľom sporenia.
   const handleReset = () => {
+    const month = monthsData[selectedMonth.key];
+    if (month) setSavingsGoals(prev => removeGoalEntriesFor(prev, [...(month.history || []), ...(month.creditHistory || [])]));
     setMonthsData(prev => { const { [selectedMonth.key]: _, ...rest } = prev; return rest; });
     setScreen('swipe');
   };
@@ -340,17 +347,18 @@ function App() {
   const handleComplete = (history, creditHistory) => {
     setMonthsData(prev => ({
       ...prev,
-      [selectedMonth.key]: { history, creditHistory },
+      [selectedMonth.key]: { history: withUids(history), creditHistory: withUids(creditHistory) },
     }));
     setScreen('results');
   };
 
+  // Nové transakcie (napr. pridané ručne) dostanú jedinečné číslo.
   const handleUpdateHistory = newHistory => {
-    setMonthsData(prev => ({ ...prev, [selectedMonth.key]: { ...prev[selectedMonth.key], history: newHistory } }));
+    setMonthsData(prev => ({ ...prev, [selectedMonth.key]: { ...prev[selectedMonth.key], history: withUids(newHistory) } }));
   };
 
   const handleUpdateCreditHistory = newCreditHistory => {
-    setMonthsData(prev => ({ ...prev, [selectedMonth.key]: { ...prev[selectedMonth.key], creditHistory: newCreditHistory } }));
+    setMonthsData(prev => ({ ...prev, [selectedMonth.key]: { ...prev[selectedMonth.key], creditHistory: withUids(newCreditHistory) } }));
   };
 
   if (user === undefined) {

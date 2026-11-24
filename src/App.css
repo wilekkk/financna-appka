@@ -1852,3 +1852,6 @@ select.goal-input {
   font-weight: 500;
   cursor: pointer;
 }
+
+/* Veta v potvrdení mazania: čo sa odoberie z cieľov sporenia */
+.tx-confirm-note { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--ink-3); }
