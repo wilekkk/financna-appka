@@ -179,8 +179,10 @@ export default function TransactionRow({ item, showDate, editMode, savingsGoals,
               value={amountInput}
               onChange={e => setAmountInput(e.target.value)}
               onBlur={() => {
-                const val = Math.max(0, parseFloat(amountInput.replace(',', '.')) || 0);
-                onUpdateAmount(item._type, item._idx, val);
+                // Prázdne pole, nula alebo nezmysel: suma ostane pôvodná (inak by transakcia zmizla).
+                // Transakcia sa maže len tlačidlom na mazanie, ktoré sa najprv opýta.
+                const val = parseFloat(amountInput.replace(',', '.'));
+                if (Number.isFinite(val) && val > 0) onUpdateAmount(item._type, item._idx, Math.round(val * 100) / 100);
                 setEditingAmount(false);
               }}
               onKeyDown={e => {

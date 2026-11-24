@@ -163,6 +163,14 @@ test('celá aplikácia funguje', async () => {
   fireEvent.change(input, { target: { value: '60' } });
   fireEvent.blur(input);
   expect(within(lidl()).getByText('−60,00 €')).toBeTruthy();
+  // vymazané pole alebo nula: suma ostane pôvodná a transakcia nezmizne
+  for (const value of ['', '0']) {
+    fireEvent.click(within(lidl()).getByText('−60,00 €'));
+    const emptied = lidl().querySelector('.amount-input');
+    fireEvent.change(emptied, { target: { value } });
+    fireEvent.blur(emptied);
+    expect(within(lidl()).getByText('−60,00 €')).toBeTruthy();
+  }
   fireEvent.click(within(screen.getByText('Kaviareň').closest('.tx-item')).getByLabelText('Vymazať transakciu'));
   fireEvent.click(screen.getByText('Áno'));
   expect(screen.queryByText('Kaviareň')).toBeNull();
